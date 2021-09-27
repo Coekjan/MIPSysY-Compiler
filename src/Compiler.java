@@ -1,19 +1,15 @@
 import exceptions.IdentificationException;
 import frontend.Token;
 import frontend.Tokenizer;
+import utils.SimpleIO;
 
-import java.io.*;
-import java.util.List;
+import java.io.IOException;
 
 public class Compiler {
-    public static void tokenizerTest() throws IOException {
+    public static void tokenizerTest(String in, String out) throws IOException {
         try {
-            final List<Token> tokens = new Tokenizer(new File("testfile.txt")).getTokens();
-            final PrintWriter out = new PrintWriter("output.txt");
-            out.println(tokens.stream()
-                    .map(Token::toString)
-                    .reduce((s1, s2) -> s1 + "\n" + s2).orElse(""));
-            out.close();
+            SimpleIO.output(out, Tokenizer.lex(SimpleIO.input(in)),
+                    l -> l.stream().map(Token::toString).reduce((x, y) -> x + "\n" + y).orElse(""));
         } catch (IdentificationException e) {
             System.err.println("Identification Exception");
             System.exit(1);
@@ -21,6 +17,6 @@ public class Compiler {
     }
 
     public static void main(String[] args) throws IOException {
-        tokenizerTest();
+        tokenizerTest("testfile.txt", "output.txt");
     }
 }

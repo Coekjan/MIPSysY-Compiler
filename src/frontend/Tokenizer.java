@@ -2,32 +2,20 @@ package frontend;
 
 import exceptions.IdentificationException;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Tokenizer {
-    private final List<Token> tokens = new LinkedList<>();
-
-    public Tokenizer(File file) throws IOException, IdentificationException {
-        final InputStream inputStream = new FileInputStream(file);
-        final StringJoiner stringJoiner = new StringJoiner("\n");
-        final Scanner scanner = new Scanner(inputStream);
-        while (scanner.hasNextLine()) {
-            stringJoiner.add(scanner.nextLine());
-        }
-        scanner.close();
-        final String code = stringJoiner.toString();
+    public static List<Token> lex(String code) throws IOException, IdentificationException {
+        final List<Token> tokens = new LinkedList<>();
         final Optional<String> make = Token.typePatterns.entrySet().stream()
                 .map(e -> "(?<" + e.getKey().toString() + ">" + e.getValue() + ")")
                 .reduce((s1, s2) -> s1 + "|" + s2);
-        if (!make.isPresent()) {
-            throw new IllegalArgumentException();
-        }
+        assert make.isPresent();
         final Pattern pattern = Pattern.compile(make.get() + "|(?<ERROR>.)");
         final Matcher matcher = pattern.matcher(code);
         int lineNumber = 1;
@@ -44,9 +32,6 @@ public class Tokenizer {
             }
             throw new IdentificationException();
         }
-    }
-
-    public List<Token> getTokens() {
         return tokens;
     }
 }
