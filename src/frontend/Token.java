@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class Token {
+public class Token extends ParserUnit {
     public enum Type {
         SPACE, SINGCOM, MULTCOM,
         IDENFR, INTCON, STRCON, MAINTK, CONSTTK, INTTK, BREAKTK, CONTINUETK, IFTK, ELSETK,
@@ -67,6 +67,7 @@ public class Token {
     public final int line;
 
     public Token(String content, Type type, int line) {
+        super(type.name(), NIL);
         this.content = content;
         this.type = type;
         this.line = line;
