@@ -11,9 +11,7 @@ import static frontend.Token.Type.*;
 public class ParserController {
     private static Token takeWithAssert(TokenSupporter supporter, Token.Type type) throws ParserException {
         final Token take = supporter.take().orElseThrow(ParserException::new);
-        if (take.type != type) {
-            throw new ParserException();
-        }
+        if (take.type != type) throw new ParserException();
         return take;
     }
 
@@ -384,9 +382,7 @@ public class ParserController {
         public static ParserUnit parse(TokenSupporter supporter) throws ParserException {
             final List<ParserUnit> units = new LinkedList<>();
             final List<Token> tokens = supporter.tokens;
-            if (tokens.isEmpty()) {
-                throw new ParserException();
-            }
+            if (tokens.isEmpty()) throw new ParserException();
             if (tokens.get(0).type == LPARENT) {
                 units.add(takeWithAssert(supporter, LPARENT));
                 units.add(Exp.parse(supporter));
@@ -412,9 +408,7 @@ public class ParserController {
         public static ParserUnit parse(TokenSupporter supporter) throws ParserException {
             final List<ParserUnit> units = new LinkedList<>();
             final List<Token> tokens = supporter.tokens;
-            if (tokens.isEmpty()) {
-                throw new ParserException();
-            }
+            if (tokens.isEmpty()) throw new ParserException();
             if (tokens.get(0).type == PLUS || tokens.get(0).type == MINU || tokens.get(0).type == NOT) {
                 units.add(UnaryOp.parse(supporter));
                 units.add(UnaryExp.parse(supporter));
@@ -436,9 +430,7 @@ public class ParserController {
         public static ParserUnit parse(TokenSupporter supporter) throws ParserException {
             final List<ParserUnit> units = new LinkedList<>();
             final List<Token> tokens = supporter.tokens;
-            if (tokens.isEmpty()) {
-                throw new ParserException();
-            }
+            if (tokens.isEmpty()) throw new ParserException();
             switch (tokens.get(0).type) {
                 case PLUS:
                     units.add(takeWithAssert(supporter, PLUS));
@@ -474,9 +466,7 @@ public class ParserController {
             final List<ParserUnit> units = new LinkedList<>();
             final List<Token> tokens = supporter.tokens;
             units.add(UnaryExp.parse(supporter));
-            if (tokens.isEmpty()) {
-                throw new ParserException();
-            }
+            if (tokens.isEmpty()) throw new ParserException();
             while (tokens.get(0).type == MULT || tokens.get(0).type == DIV || tokens.get(0).type == MOD) {
                 final ParserUnit comb = new ParserUnit("MulExp", units);
                 units.clear();
@@ -493,9 +483,7 @@ public class ParserController {
             final List<ParserUnit> units = new LinkedList<>();
             final List<Token> tokens = supporter.tokens;
             units.add(MulExp.parse(supporter));
-            if (tokens.isEmpty()) {
-                throw new ParserException();
-            }
+            if (tokens.isEmpty()) throw new ParserException();
             while (tokens.get(0).type == PLUS || tokens.get(0).type == MINU) {
                 final ParserUnit comb = new ParserUnit("AddExp", units);
                 units.clear();
@@ -512,9 +500,7 @@ public class ParserController {
             final List<ParserUnit> units = new LinkedList<>();
             final List<Token> tokens = supporter.tokens;
             units.add(AddExp.parse(supporter));
-            if (tokens.isEmpty()) {
-                throw new ParserException();
-            }
+            if (tokens.isEmpty()) throw new ParserException();
             while (tokens.get(0).type == LSS || tokens.get(0).type == GRE ||
                     tokens.get(0).type == LEQ || tokens.get(0).type == GEQ) {
                 final ParserUnit comb = new ParserUnit("RelExp", units);
@@ -532,9 +518,7 @@ public class ParserController {
             final List<ParserUnit> units = new LinkedList<>();
             final List<Token> tokens = supporter.tokens;
             units.add(RelExp.parse(supporter));
-            if (tokens.isEmpty()) {
-                throw new ParserException();
-            }
+            if (tokens.isEmpty()) throw new ParserException();
             while (tokens.get(0).type == EQL || tokens.get(0).type == NEQ) {
                 final ParserUnit comb = new ParserUnit("EqExp", units);
                 units.clear();
@@ -551,9 +535,7 @@ public class ParserController {
             final List<ParserUnit> units = new LinkedList<>();
             final List<Token> tokens = supporter.tokens;
             units.add(EqExp.parse(supporter));
-            if (tokens.isEmpty()) {
-                throw new ParserException();
-            }
+            if (tokens.isEmpty()) throw new ParserException();
             while (tokens.get(0).type == AND) {
                 final ParserUnit comb = new ParserUnit("LAndExp", units);
                 units.clear();
@@ -570,9 +552,7 @@ public class ParserController {
             final List<ParserUnit> units = new LinkedList<>();
             final List<Token> tokens = supporter.tokens;
             units.add(LAndExp.parse(supporter));
-            if (tokens.isEmpty()) {
-                throw new ParserException();
-            }
+            if (tokens.isEmpty()) throw new ParserException();
             while (tokens.get(0).type == OR) {
                 final ParserUnit comb = new ParserUnit("LOrExp", units);
                 units.clear();

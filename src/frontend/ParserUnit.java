@@ -1,27 +1,15 @@
 package frontend;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
+import java.util.Collections;
 import java.util.List;
 
 public class ParserUnit {
-    public static final List<ParserUnit> NIL = new LinkedList<>();
-
-    private final String name;
-    private final List<ParserUnit> derivations;
+    public final String name;
+    public final List<ParserUnit> derivations;
 
     public ParserUnit(String name, List<ParserUnit> units) {
         this.name = name;
-        this.derivations = new ArrayList<>(units);
-    }
-
-    public ParserUnit(String name, ParserUnit... units) {
-        this(name, Arrays.asList(units));
-    }
-
-    public List<ParserUnit> getDerivations() {
-        return derivations;
+        this.derivations = Collections.unmodifiableList(units);
     }
 
     @Override

@@ -67,7 +67,7 @@ public class Token extends ParserUnit {
     public final int line;
 
     public Token(String content, Type type, int line) {
-        super(type.name(), NIL);
+        super(type.name(), Collections.emptyList());
         this.content = content;
         this.type = type;
         this.line = line;
