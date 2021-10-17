@@ -15,6 +15,6 @@ public class UnaryExprNode implements ExprNode {
 
     @Override
     public String toString() {
-        return operator.toString() + " " + exprNode.toString();
+        return operator.toString() + " (" + exprNode.toString() + ")";
     }
 }
