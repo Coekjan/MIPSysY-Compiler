@@ -1,5 +1,6 @@
 package frontend;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -9,7 +10,7 @@ public class ParserUnit {
 
     public ParserUnit(String name, List<ParserUnit> units) {
         this.name = name;
-        this.derivations = Collections.unmodifiableList(units);
+        this.derivations = Collections.unmodifiableList(new ArrayList<>(units));
     }
 
     @Override
