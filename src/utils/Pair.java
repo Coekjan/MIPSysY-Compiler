@@ -2,23 +2,17 @@ package utils;
 
 import java.util.Objects;
 
-public class Pair<T extends Comparable<T>> implements Comparable<Pair<T>> {
-    public static <S extends Comparable<S>> Pair<S> of(S f, S s) {
+public class Pair<T, U> {
+    public static <S, V> Pair<S, V> of(S f, V s) {
         return new Pair<>(f, s);
     }
 
     public final T first;
-    public final T second;
+    public final U second;
 
-    public Pair(T first, T second) {
+    public Pair(T first, U second) {
         this.first = first;
         this.second = second;
-    }
-
-    @Override
-    public int compareTo(Pair<T> o) {
-        int f = first.compareTo(o.first);
-        return f != 0 ? f : second.compareTo(o.second);
     }
 
     @Override
@@ -29,7 +23,7 @@ public class Pair<T extends Comparable<T>> implements Comparable<Pair<T>> {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        Pair<?> pair = (Pair<?>) o;
+        Pair<?, ?> pair = (Pair<?, ?>) o;
         return Objects.equals(first, pair.first) && Objects.equals(second, pair.second);
     }
 

@@ -35,7 +35,23 @@ public class Compiler {
         }
     }
 
+    public static void transTest(String in, String out) throws IOException {
+        try {
+            TokenSupporter supporter = new TokenSupporter(Tokenizer.lex(SimpleIO.input(in)));
+            ParserUnit compUnit = ParserController.CompUnit.parse(supporter);
+            GlobalNode globalNode = SyntaxTreeBuilder.fetch(compUnit);
+            SimpleIO.output(out, globalNode, GlobalNode::toString);
+        } catch (IdentificationException e) {
+            System.err.println("Identification Exception");
+            System.exit(1);
+        } catch (ParserException e) {
+            System.err.println("Parser Exception");
+            e.printStackTrace();
+            System.exit(2);
+        }
+    }
+
     public static void main(String[] args) throws IOException {
-        parserTest("testfile.txt", "output.txt");
+        transTest("testfile.txt", "output.txt");
     }
 }
