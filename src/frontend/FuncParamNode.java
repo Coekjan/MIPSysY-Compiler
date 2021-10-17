@@ -1,8 +1,9 @@
 package frontend;
 
+import exceptions.SysYException;
 import utils.Pair;
 
-public class FuncParamNode {
+public class FuncParamNode implements SyntaxNode {
     public final String name;
     public final int line;
     public final Pair<ExprNode, ExprNode> dimensions;
@@ -20,5 +21,12 @@ public class FuncParamNode {
     @Override
     public String toString() {
         return name + dimensions.toString();
+    }
+
+    @Override
+    public SymbolTable check(SymbolTable symbolTable, boolean inLoop) throws SysYException {
+        dimensions.first.check(symbolTable, inLoop);
+        dimensions.second.check(symbolTable, inLoop);
+        return symbolTable;
     }
 }

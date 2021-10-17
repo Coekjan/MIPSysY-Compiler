@@ -99,7 +99,7 @@ public abstract class SyntaxTreeBuilder {
     
     private static DeclNode toDecl(ParserUnit parserUnit) { // Decl
         return new DeclNode(
-                parserUnit.derivations.get(0).name.equals("ConstDecl"),
+                !parserUnit.derivations.get(0).name.equals("ConstDecl"),
                 parserUnit.derivations.get(0).derivations.stream()
                         .filter(u -> u.name.equals("ConstDef") || u.name.equals("VarDef"))
                         .map(SyntaxTreeBuilder::toDef).collect(Collectors.toList()));
@@ -130,8 +130,6 @@ public abstract class SyntaxTreeBuilder {
                 return toLVal(parserUnit);
             case "Number":
                 return toConst(parserUnit);
-            case "STRCON":
-                return new StringExprNode((Token) parserUnit);
             default:
                 throw new IllegalArgumentException();
         }
@@ -150,9 +148,11 @@ public abstract class SyntaxTreeBuilder {
                 case BREAKTK: return toBreak(parserUnit);
                 case CONTINUETK: return toCont(parserUnit);
                 case RETURNTK: return toReturn(parserUnit);
-                case PRINTFTK: return new FuncCallNode(((Token) first), parserUnit.derivations.stream()
-                        .filter(u -> u.name.equals("Exp") || u.name.equals("STRCON"))
-                        .map(SyntaxTreeBuilder::toExpr).collect(Collectors.toList()));
+                case PRINTFTK: return new PrintNode(((Token) first),
+                        new StringExprNode((Token) parserUnit.derivations.get(2)),
+                        parserUnit.derivations.stream()
+                                .filter(u -> u.name.equals("Exp"))
+                                .map(SyntaxTreeBuilder::toExpr).collect(Collectors.toList()));
                 case SEMICN: return NopNode.NOP;
                 default: throw new IllegalArgumentException();
             }
@@ -172,15 +172,23 @@ public abstract class SyntaxTreeBuilder {
     }
     
     private static FuncDefNode toFuncDef(ParserUnit parserUnit) { // FuncDef
+        boolean returnInt = ((Token) parserUnit.derivations.get(0).derivations.get(0)).type == Token.Type.INTTK;
         return new FuncDefNode(
-                ((Token) parserUnit.derivations.get(0).derivations.get(0)).type == Token.Type.INTTK,
-                (Token) parserUnit.derivations.get(1),
+                returnInt, (Token) parserUnit.derivations.get(1),
                 !parserUnit.derivations.get(3).name.equals("FuncFParams") ? Collections.emptyList() :
                         parserUnit.derivations.get(3).derivations.stream().filter(u -> u.name.equals("FuncFParam"))
                                 .map(SyntaxTreeBuilder::toFuncParam).collect(Collectors.toList()),
-                toBlock(parserUnit.derivations.get(parserUnit.derivations.size() - 1)));
+                toFuncBlock(parserUnit.derivations.get(parserUnit.derivations.size() - 1), returnInt));
     }
-    
+
+    private static FuncBlockNode toFuncBlock(ParserUnit parserUnit, boolean returnInt) {
+        return new FuncBlockNode(parserUnit.derivations.stream()
+                .filter(u -> u.name.equals("BlockItem")).flatMap(u -> u.derivations.stream())
+                .filter(u -> u.name.equals("Decl") || u.name.equals("Stmt"))
+                .map(u -> u.name.equals("Decl") ? toDecl(u) : toStmt(u)).collect(Collectors.toList()),
+                returnInt, ((Token) parserUnit.derivations.get(parserUnit.derivations.size() - 1)).line);
+    }
+
     private static FuncParamNode toFuncParam(ParserUnit parserUnit) { // FuncFParam
         final Token identifier = (Token) parserUnit.derivations.get(1);
         ExprNode dim1 = ConstNode.ZERO;
@@ -206,7 +214,7 @@ public abstract class SyntaxTreeBuilder {
         return new GlobalNode(declNodes, funcDefNodes, new FuncDefNode(true,
                 (Token) mainBlock.derivations.get(1),
                 Collections.emptyList(),
-                toBlock(mainBlock.derivations.get(mainBlock.derivations.size() - 1))));
+                toFuncBlock(mainBlock.derivations.get(mainBlock.derivations.size() - 1), true)));
     }
 
     private static LoopNode toLoop(ParserUnit parserUnit) { // Stmt
@@ -224,8 +232,9 @@ public abstract class SyntaxTreeBuilder {
     }
 
     private static ReturnNode toReturn(ParserUnit parserUnit) { // Stmt
-        return parserUnit.derivations.size() == 2 ? new ReturnNode() :
-                new ReturnNode(toExpr(parserUnit.derivations.get(1)));
+        final int line = ((Token) parserUnit.derivations.get(0)).line;
+        return parserUnit.derivations.size() == 2 ? new ReturnNode(line) :
+                new ReturnNode(line, toExpr(parserUnit.derivations.get(1)));
     }
 
     private static DefNode toDef(ParserUnit parserUnit) { // VarDef | ConstDef

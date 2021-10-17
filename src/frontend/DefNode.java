@@ -1,12 +1,13 @@
 package frontend;
 
+import exceptions.SysYException;
 import utils.Pair;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-public class DefNode {
+public class DefNode implements SyntaxNode {
     public final String name;
     public final int line;
     public final Pair<ExprNode, ExprNode> dimensions;
@@ -27,5 +28,15 @@ public class DefNode {
     public String toString() {
         return name + dimensions.toString() + " := {" + initValues.stream()
                 .map(Objects::toString).reduce((x, y) -> x + ", " + y).orElse("") + "}";
+    }
+
+    @Override
+    public SymbolTable check(SymbolTable symbolTable, boolean inLoop) throws SysYException {
+        dimensions.first.check(symbolTable, inLoop);
+        dimensions.second.check(symbolTable, inLoop);
+        for (ExprNode initValue : initValues) {
+            initValue.check(symbolTable, inLoop);
+        }
+        return symbolTable;
     }
 }
