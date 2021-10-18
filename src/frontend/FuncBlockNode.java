@@ -18,7 +18,7 @@ public class FuncBlockNode extends BlockNode {
     @Override
     public SymbolTable check(SymbolTable symbolTable, boolean inLoop) throws SysYException {
         super.check(symbolTable, inLoop);
-        if (items.isEmpty() || !(items.get(items.size() - 1) instanceof ReturnNode)) {
+        if (hasReturn && (items.isEmpty() || !(items.get(items.size() - 1) instanceof ReturnNode))) {
             errors.add(Pair.of(endLine, SysYException.Code.g));
         }
         final List<ReturnNode> returnNodes = findRet();

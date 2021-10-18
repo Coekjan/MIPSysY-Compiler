@@ -46,7 +46,7 @@ public class Compiler {
             SimpleIO.output(out, new ArrayList<Pair<Integer, SysYException.Code>>(Tokenizer.errors) {{
                 addAll(ParserController.errors);
                 addAll(SyntaxNode.errors);
-            }}, a -> a.stream().sorted(Comparator.comparing(o -> o.first))
+            }}, a -> a.stream().distinct().sorted(Comparator.comparing(o -> o.first))
                     .map(p -> p.first + " " + p.second).reduce((x, y) -> x + "\n" + y).orElse(""));
         } catch (SysYException e) {
             System.out.println(e.stringify());

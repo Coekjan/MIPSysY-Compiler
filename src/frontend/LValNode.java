@@ -48,6 +48,8 @@ public class LValNode implements ExprNode {
     public SymbolTable check(SymbolTable symbolTable, boolean inLoop) throws SysYException {
         indexes.first.check(symbolTable, inLoop);
         indexes.second.check(symbolTable, inLoop);
+        final Optional<VarDefNode> defNode = symbolTable.find(name);
+        if (!defNode.isPresent()) errors.add(Pair.of(line, SysYException.Code.c));
         return symbolTable;
     }
 }

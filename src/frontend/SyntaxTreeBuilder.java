@@ -163,7 +163,7 @@ public abstract class SyntaxTreeBuilder {
     
     private static FuncCallNode toFuncCall(ParserUnit parserUnit) {
         final Token identifier = (Token) parserUnit.derivations.get(0);
-        if (parserUnit.derivations.size() > 3) {
+        if (parserUnit.derivations.size() > 3 || parserUnit.derivations.get(2).name.equals("FuncRParams")) {
             return new FuncCallNode(identifier, parserUnit.derivations.get(2).derivations.stream()
                     .filter(u -> u.name.equals("Exp"))
                     .map(SyntaxTreeBuilder::toExpr).collect(Collectors.toList()));
@@ -233,7 +233,7 @@ public abstract class SyntaxTreeBuilder {
 
     private static ReturnNode toReturn(ParserUnit parserUnit) { // Stmt
         final int line = ((Token) parserUnit.derivations.get(0)).line;
-        return parserUnit.derivations.size() == 2 ? new ReturnNode(line) :
+        return parserUnit.derivations.size() <= 2 ? new ReturnNode(line) :
                 new ReturnNode(line, toExpr(parserUnit.derivations.get(1)));
     }
 

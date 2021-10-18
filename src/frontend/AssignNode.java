@@ -28,8 +28,6 @@ public class AssignNode implements StmtNode {
             if (!defNode.get().getInfo().get(left.name).first) {
                 errors.add(Pair.of(left.line, SysYException.Code.h));
             }
-        } else {
-            errors.add(Pair.of(left.line, SysYException.Code.c));
         }
         return symbolTable;
     }

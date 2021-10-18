@@ -35,7 +35,8 @@ public class FuncCallNode implements ExprNode {
         if (arguments.size() != parameters.size()) {
             errors.add(Pair.of(line, name.equals("printf") ? SysYException.Code.l : SysYException.Code.d));
         }
-        for (int i = 0; i < arguments.size(); ++i) {
+        for (int i = 0, maxIndex = Math.min(arguments.size(), parameters.size()); i < maxIndex; ++i) {
+            arguments.get(i).check(symbolTable, inLoop);
             if (parameters.get(i).dimensions.second != ZERO) {
                 try {
                     if (arguments.get(i).getRetType(symbolTable) != ReturnType.DIM2) {
@@ -61,7 +62,6 @@ public class FuncCallNode implements ExprNode {
                     errors.add(Pair.of(line, e.code));
                 }
             }
-            arguments.get(i).check(symbolTable, inLoop);
         }
         return symbolTable;
     }
