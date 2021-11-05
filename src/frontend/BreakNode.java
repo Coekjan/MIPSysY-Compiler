@@ -22,4 +22,9 @@ public class BreakNode implements StmtNode {
         }
         return symbolTable;
     }
+
+    @Override
+    public Pair<SymbolTable, SyntaxNode> simplify(SymbolTable symbolTable) {
+        return Pair.of(symbolTable, this);
+    }
 }

@@ -1,6 +1,7 @@
 package frontend;
 
 import exceptions.SysYException;
+import utils.Pair;
 
 import java.util.Collections;
 import java.util.List;
@@ -24,6 +25,12 @@ public class LoopNode implements StmtNode {
         condition.check(symbolTable, inLoop);
         loopBody.check(symbolTable.yield(Collections.emptyMap()), true);
         return symbolTable;
+    }
+
+    @Override
+    public Pair<SymbolTable, SyntaxNode> simplify(SymbolTable symbolTable) {
+        return Pair.of(symbolTable, new LoopNode((ExprNode) condition.simplify(symbolTable).second,
+                (StmtNode) loopBody.simplify(symbolTable.yield(Collections.emptyMap())).second));
     }
 
     @Override

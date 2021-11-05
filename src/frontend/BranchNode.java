@@ -1,6 +1,7 @@
 package frontend;
 
 import exceptions.SysYException;
+import utils.Pair;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,6 +36,15 @@ public class BranchNode implements StmtNode {
         thenBlock.check(symbolTable.yield(Collections.emptyMap()), inLoop);
         if (elseBlock != null) elseBlock.check(symbolTable.yield(Collections.emptyMap()), inLoop);
         return symbolTable;
+    }
+
+    @Override
+    public Pair<SymbolTable, SyntaxNode> simplify(SymbolTable symbolTable) {
+        final ExprNode simCond = (ExprNode) condition.simplify(symbolTable).second;
+        final StmtNode simThen = (StmtNode) thenBlock.simplify(symbolTable).second;
+        if (elseBlock == null) return Pair.of(symbolTable, new BranchNode(simCond, simThen));
+        final StmtNode simElse = (StmtNode) elseBlock.simplify(symbolTable.yield(Collections.emptyMap())).second;
+        return Pair.of(symbolTable, new BranchNode(simCond, simThen, simElse));
     }
 
     @Override

@@ -1,6 +1,7 @@
 package frontend;
 
 import exceptions.SysYException;
+import utils.Pair;
 
 public class StringExprNode implements ExprNode {
     public final String content;
@@ -26,5 +27,10 @@ public class StringExprNode implements ExprNode {
     @Override
     public SymbolTable check(SymbolTable symbolTable, boolean inLoop) throws SysYException {
         return symbolTable;
+    }
+
+    @Override
+    public Pair<SymbolTable, SyntaxNode> simplify(SymbolTable symbolTable) {
+        return Pair.of(symbolTable, this);
     }
 }

@@ -4,6 +4,7 @@ import exceptions.SysYException;
 import utils.Pair;
 
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static frontend.ConstNode.ZERO;
 
@@ -51,5 +52,25 @@ public class LValNode implements ExprNode {
         final Optional<VarDefNode> defNode = symbolTable.find(name);
         if (!defNode.isPresent()) errors.add(Pair.of(line, SysYException.Code.c));
         return symbolTable;
+    }
+
+    @Override
+    public Pair<SymbolTable, SyntaxNode> simplify(SymbolTable symbolTable) {
+        final Pair<ExprNode, ExprNode> p = Pair.of((ExprNode) indexes.first.simplify(symbolTable).second,
+                (ExprNode) indexes.second.simplify(symbolTable).second);
+        if (p.first instanceof ConstNode && p.second instanceof ConstNode) {
+            final Optional<VarDefNode> defNode = symbolTable.find(name);
+            assert defNode.isPresent();
+            final VarDefNode varDefNode = defNode.get();
+            if (!varDefNode.getInfo().get(name).first && varDefNode instanceof DeclNode) {
+                final DeclNode declNode = (DeclNode) varDefNode;
+                final DefNode initDef = declNode.defNodes.stream().filter(d -> d.name.equals(name))
+                        .collect(Collectors.toList()).get(0);
+                final int index = ((ConstNode) p.first).constant * ((ConstNode) initDef.dimensions.second).constant
+                        + ((ConstNode) p.second).constant;
+                return Pair.of(symbolTable, initDef.initValues.get(index));
+            }
+        }
+        return Pair.of(symbolTable, new LValNode(name, line, p));
     }
 }

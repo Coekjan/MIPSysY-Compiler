@@ -31,4 +31,10 @@ public class AssignNode implements StmtNode {
         }
         return symbolTable;
     }
+
+    @Override
+    public Pair<SymbolTable, SyntaxNode> simplify(SymbolTable symbolTable) {
+        return Pair.of(symbolTable, new AssignNode((LValNode) left.simplify(symbolTable).second,
+                (ExprNode) right.simplify(symbolTable).second));
+    }
 }

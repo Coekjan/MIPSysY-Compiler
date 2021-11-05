@@ -1,6 +1,7 @@
 package frontend;
 
 import exceptions.SysYException;
+import utils.Pair;
 
 import java.util.Collections;
 import java.util.List;
@@ -35,5 +36,12 @@ public class ReturnNode implements StmtNode {
     public SymbolTable check(SymbolTable symbolTable, boolean inLoop) throws SysYException {
         if (returnValue != null) returnValue.check(symbolTable, inLoop);
         return symbolTable;
+    }
+
+    @Override
+    public Pair<SymbolTable, SyntaxNode> simplify(SymbolTable symbolTable) {
+        if (returnValue != null) return Pair.of(symbolTable,
+                new ReturnNode(line, (ExprNode) returnValue.simplify(symbolTable).second));
+        return Pair.of(symbolTable, this);
     }
 }

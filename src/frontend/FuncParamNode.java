@@ -29,4 +29,11 @@ public class FuncParamNode implements SyntaxNode {
         dimensions.second.check(symbolTable, inLoop);
         return symbolTable;
     }
+
+    @Override
+    public Pair<SymbolTable, SyntaxNode> simplify(SymbolTable symbolTable) {
+        final ExprNode f = (ExprNode) dimensions.first.simplify(symbolTable).second;
+        final ExprNode s = (ExprNode) dimensions.second.simplify(symbolTable).second;
+        return Pair.of(symbolTable, new FuncParamNode(name, line, Pair.of(f, s)));
+    }
 }

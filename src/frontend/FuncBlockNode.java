@@ -16,6 +16,13 @@ public class FuncBlockNode extends BlockNode {
     }
 
     @Override
+    public Pair<SymbolTable, SyntaxNode> simplify(SymbolTable symbolTable) {
+        final Pair<SymbolTable, SyntaxNode> p = super.simplify(symbolTable);
+        final BlockNode blockNode = (BlockNode) p.second;
+        return Pair.of(p.first, new FuncBlockNode(blockNode.items, hasReturn, endLine));
+    }
+
+    @Override
     public SymbolTable check(SymbolTable symbolTable, boolean inLoop) throws SysYException {
         super.check(symbolTable, inLoop);
         if (hasReturn && (items.isEmpty() || !(items.get(items.size() - 1) instanceof ReturnNode))) {

@@ -57,7 +57,39 @@ public class Compiler {
         }
     }
 
+    public static void constCalTest(String in, String out) throws IOException {
+        try {
+            final TokenSupporter supporter = new TokenSupporter(Tokenizer.lex(SimpleIO.input(in)));
+            final ParserUnit compUnit = ParserController.CompUnit.parse(supporter);
+            final GlobalNode globalNode = SyntaxTreeBuilder.fetch(compUnit);
+            final SymbolTable initSymbols = new SymbolTable(Collections.emptyMap(),
+                    new HashMap<String, FuncDefNode>() {{
+                        put("getint", new FuncDefNode(true, "getint", 0, Collections.emptyList(),
+                                new FuncBlockNode(Collections.emptyList(), true, 0)));
+            }});
+            globalNode.check(initSymbols, false);
+            final List<Pair<Integer, SysYException.Code>> errors =
+                    new ArrayList<Pair<Integer, SysYException.Code>>(Tokenizer.errors) {{
+                        addAll(ParserController.errors);
+                        addAll(SyntaxNode.errors);
+            }};
+            if (!errors.isEmpty()) {
+                SimpleIO.output(out, errors, a -> a.stream().distinct().sorted(Comparator.comparing(o -> o.first))
+                        .map(p -> p.first + " " + p.second).reduce((x, y) -> x + "\n" + y).orElse(""));
+                return;
+            }
+            final GlobalNode globalNodeWithoutConstExp = (GlobalNode) globalNode.simplify(initSymbols).second;
+            SimpleIO.output(out, globalNodeWithoutConstExp.toString(), s -> s);
+        } catch (SysYException e) {
+            System.out.println(e.stringify());
+            System.exit(1);
+        } catch (ParserController.ParseError e) {
+            System.err.println("Expect " + e.type);
+            System.exit(1);
+        }
+    }
+
     public static void main(String[] args) throws IOException {
-        transTest("testfile.txt", "error.txt");
+        constCalTest("testfile.txt", "output.txt");
     }
 }

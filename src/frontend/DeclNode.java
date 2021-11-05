@@ -16,7 +16,7 @@ public class DeclNode implements BlockItemNode, VarDefNode {
 
     @Override
     public String toString() {
-        return (modifiable ? "CONST INT " : "INT ") + defNodes.stream()
+        return (modifiable ? "INT " : "CONST INT ") + defNodes.stream()
                 .map(Objects::toString).reduce((x, y) -> x + ", " + y).orElse("");
     }
 
@@ -41,5 +41,23 @@ public class DeclNode implements BlockItemNode, VarDefNode {
             next = next.update(map);
         }
         return next;
+    }
+
+    @Override
+    public Pair<SymbolTable, SyntaxNode> simplify(SymbolTable symbolTable) {
+        SymbolTable next = symbolTable;
+        final List<DefNode> simDef = new LinkedList<>();
+        DeclNode temp = this;
+        for (DefNode defNode : defNodes) {
+            final Pair<SymbolTable, SyntaxNode> p = defNode.simplify(next);
+            Map<String, VarDefNode> map = new HashMap<>(next.getHead());
+            map.put(defNode.name, temp);
+            simDef.add((DefNode) p.second);
+            final DeclNode old = temp;
+            temp = new DeclNode(modifiable, simDef);
+            next = next.update(map).fixVarRef(old, temp);
+        }
+        final DeclNode res = new DeclNode(modifiable, simDef);
+        return Pair.of(next, res);
     }
 }

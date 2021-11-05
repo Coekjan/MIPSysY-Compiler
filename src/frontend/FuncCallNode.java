@@ -67,6 +67,15 @@ public class FuncCallNode implements ExprNode {
     }
 
     @Override
+    public Pair<SymbolTable, SyntaxNode> simplify(SymbolTable symbolTable) {
+        final List<ExprNode> simArgs = new LinkedList<>();
+        for (ExprNode exprNode : arguments) {
+            simArgs.add((ExprNode) exprNode.simplify(symbolTable).second);
+        }
+        return Pair.of(symbolTable, new FuncCallNode(name, line, simArgs));
+    }
+
+    @Override
     public ReturnType getRetType(SymbolTable symbolTable) throws SysYException {
         FuncDefNode defNode = symbolTable.functionMap.get(name);
         if (defNode != null) return defNode.returnInt ? ReturnType.INT : ReturnType.VOID;

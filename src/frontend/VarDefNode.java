@@ -2,6 +2,7 @@ package frontend;
 
 import utils.Pair;
 
+import java.util.List;
 import java.util.Map;
 
 public interface VarDefNode extends SyntaxNode {

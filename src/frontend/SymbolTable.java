@@ -18,6 +18,11 @@ public class SymbolTable {
         }});
     }
 
+    private SymbolTable(List<Map<String, VarDefNode>> variableMapList, Map<String, FuncDefNode> functionMap) {
+        this.variableMapList = Collections.unmodifiableList(variableMapList);
+        this.functionMap = Collections.unmodifiableMap(functionMap);
+    }
+
     private SymbolTable(SymbolTable symbolTable, Map<String, VarDefNode> varDefNodeMap, boolean create) {
         this.variableMapList = create ? Collections.unmodifiableList(
                 new ArrayList<Map<String, VarDefNode>>(symbolTable.variableMapList) {{
@@ -49,5 +54,21 @@ public class SymbolTable {
             }
         }
         return Optional.empty();
+    }
+
+    public SymbolTable fixVarRef(VarDefNode origin, VarDefNode target) {
+        final List<Map<String, VarDefNode>> fixMapList = new ArrayList<>();
+        for (Map<String, VarDefNode> map : variableMapList) {
+            final Map<String, VarDefNode> fixMap = new HashMap<>(map);
+            fixMap.replaceAll((k, v) -> map.get(k) == origin ? target : v);
+            fixMapList.add(fixMap);
+        }
+        return new SymbolTable(fixMapList, functionMap);
+    }
+
+    public SymbolTable fixFuncRef(FuncDefNode origin, FuncDefNode target) {
+        final Map<String, FuncDefNode> fixMap = new HashMap<>(functionMap);
+        fixMap.replaceAll((k, v) -> functionMap.get(k) == origin ? target : v);
+        return new SymbolTable(variableMapList, fixMap);
     }
 }

@@ -1,8 +1,10 @@
 package frontend;
 
 import exceptions.SysYException;
+import utils.Pair;
 
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -27,6 +29,19 @@ public class BlockNode implements StmtNode {
             next = item.check(item instanceof BlockNode ? next.yield(Collections.emptyMap()) : next, inLoop);
         }
         return symbolTable;
+    }
+
+    @Override
+    public Pair<SymbolTable, SyntaxNode> simplify(SymbolTable symbolTable) {
+        SymbolTable next = symbolTable;
+        final List<BlockItemNode> simBlkItem = new LinkedList<>();
+        for (BlockItemNode item : items) {
+            final Pair<SymbolTable, SyntaxNode> p =
+                    item.simplify(item instanceof BlockNode ? next.yield(Collections.emptyMap()) : next);
+            next = p.first;
+            simBlkItem.add((BlockItemNode) p.second);
+        }
+        return Pair.of(symbolTable, new BlockNode(simBlkItem));
     }
 
     @Override

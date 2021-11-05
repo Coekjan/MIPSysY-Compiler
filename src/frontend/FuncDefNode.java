@@ -57,4 +57,24 @@ public class FuncDefNode implements VarDefNode {
         block.check(next, inLoop);
         return symbolTable;
     }
+
+    @Override
+    public Pair<SymbolTable, SyntaxNode> simplify(SymbolTable symbolTable) {
+        final FuncDefNode self = this;
+        final List<FuncParamNode> simPara = new LinkedList<>();
+        symbolTable = new SymbolTable(symbolTable, new HashMap<String, FuncDefNode>() {{
+            put(name, self);
+        }});
+        SymbolTable next = symbolTable.yield(Collections.emptyMap());
+        for (FuncParamNode paramNode : parameters) {
+            final Pair<SymbolTable, SyntaxNode> p = paramNode.simplify(next);
+            next = next.update(new HashMap<String, VarDefNode>(next.getHead()) {{
+                put(paramNode.name, self);
+            }});
+            simPara.add((FuncParamNode) p.second);
+        }
+        final Pair<SymbolTable, SyntaxNode> simBlk = block.simplify(next);
+        final FuncDefNode res = new FuncDefNode(returnInt, name, line, simPara, (FuncBlockNode) simBlk.second);
+        return Pair.of(symbolTable.fixFuncRef(self, res), res);
+    }
 }

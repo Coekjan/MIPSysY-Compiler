@@ -4,6 +4,7 @@ import exceptions.SysYException;
 import utils.Pair;
 
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
@@ -38,5 +39,17 @@ public class DefNode implements SyntaxNode {
             initValue.check(symbolTable, inLoop);
         }
         return symbolTable;
+    }
+
+    @Override
+    public Pair<SymbolTable, SyntaxNode> simplify(SymbolTable symbolTable) {
+        final ExprNode f = (ExprNode) dimensions.first.simplify(symbolTable).second;
+        final ExprNode s = (ExprNode) dimensions.second.simplify(symbolTable).second;
+        final List<ExprNode> simInit = new LinkedList<>();
+        for (ExprNode initValue : initValues) {
+            final Pair<SymbolTable, SyntaxNode> p = initValue.simplify(symbolTable);
+            simInit.add((ExprNode) p.second);
+        }
+        return Pair.of(symbolTable, new DefNode(name, line, Pair.of(f, s), simInit));
     }
 }

@@ -1,8 +1,10 @@
 package frontend;
 
 import exceptions.SysYException;
+import utils.Pair;
 
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 public class GlobalNode implements SyntaxNode {
@@ -34,5 +36,25 @@ public class GlobalNode implements SyntaxNode {
             next = funcDefNode.check(next, inLoop);
         }
         return mainFuncDef.check(next, inLoop);
+    }
+
+    @Override
+    public Pair<SymbolTable, SyntaxNode> simplify(SymbolTable symbolTable) {
+        SymbolTable next = symbolTable;
+        final List<DeclNode> simDecl = new LinkedList<>();
+        final List<FuncDefNode> simFunc = new LinkedList<>();
+        for (DeclNode declNode : declNodes) {
+            final Pair<SymbolTable, SyntaxNode> p = declNode.simplify(next);
+            next = p.first;
+            simDecl.add((DeclNode) p.second);
+        }
+        for (FuncDefNode funcDefNode : funcDefNodes) {
+            final Pair<SymbolTable, SyntaxNode> p = funcDefNode.simplify(next);
+            next = p.first;
+            simFunc.add((FuncDefNode) p.second);
+        }
+        final Pair<SymbolTable, SyntaxNode> p = mainFuncDef.simplify(next);
+        final FuncDefNode simMain = (FuncDefNode) p.second;
+        return Pair.of(p.first, new GlobalNode(simDecl, simFunc, simMain));
     }
 }
