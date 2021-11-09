@@ -227,7 +227,7 @@ public abstract class SyntaxTreeBuilder {
                 .filter(u -> u.name.equals("Exp"))
                 .map(SyntaxTreeBuilder::toExpr).collect(Collectors.toList());
         if (exprNodes.isEmpty()) return new LValNode(identifier, Pair.of(ConstNode.ZERO, ConstNode.ZERO));
-        if (exprNodes.size() == 1) return new LValNode(identifier, Pair.of(exprNodes.get(0), ConstNode.ZERO));
+        if (exprNodes.size() == 1) return new LValNode(identifier, Pair.of(ConstNode.ZERO, exprNodes.get(0)));
         return new LValNode(identifier, Pair.of(exprNodes.get(0), exprNodes.get(1)));
     }
 
