@@ -35,8 +35,8 @@ public class BinaryExprNode implements ExprNode {
                     put(Operator.MUL, (a, b) -> a * b);
                     put(Operator.DIV, (a, b) -> a / b);
                     put(Operator.MOD, (a, b) -> a % b);
-                    put(Operator.AND, (a, b) -> a == 1 && b == 1 ? 1 : 0);
-                    put(Operator.OR, (a, b) -> a == 1 || b == 1 ? 1 : 0);
+                    put(Operator.AND, (a, b) -> a != 0 && b != 0 ? 1 : 0);
+                    put(Operator.OR, (a, b) -> a != 0 || b != 0 ? 1 : 0);
                     put(Operator.GT, (a, b) -> a > b ? 1 : 0);
                     put(Operator.GE, (a, b) -> a >= b ? 1 : 0);
                     put(Operator.LT, (a, b) -> a < b ? 1 : 0);
