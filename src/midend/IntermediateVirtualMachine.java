@@ -40,13 +40,6 @@ public class IntermediateVirtualMachine {
         return varStack.get(varStack.size() - 1).get(name);
     }
 
-    int findArr(String name) {
-        if (arrStack.get(0).containsKey(name)) {
-            return arrStack.get(0).get(name).first;
-        }
-        return arrStack.get(varStack.size() - 1).get(name).first;
-    }
-
     void updateVar(String name, int val) {
         if (varStack.get(0).containsKey(name)) {
             varStack.get(0).put(name, val);
