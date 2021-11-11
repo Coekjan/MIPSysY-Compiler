@@ -72,24 +72,26 @@ public class BranchNode implements StmtNode {
                 AssignUnaryOperation.UnaryOperation.NOT, conditionCode.finalSym);
         final IntermediateCode branch = new Branch(brCond, thenEndLabel);
         final IntermediateCode jumpEnd = new Jump(elseEndLabel);
-        final IntermediateCode end = new Nop();
-        lt.assignLabelToCode(thenEndLabel, end);
+        final IntermediateCode thenEnd = new Nop();
+        lt.assignLabelToCode(thenEndLabel, thenEnd);
         conditionCode.second.link(invert);
         invert.link(branch);
         branch.link(thenBlockCode.first);
         thenBlockCode.second.link(jumpEnd);
-        jumpEnd.link(end);
+        jumpEnd.link(thenEnd);
         if (elseBlock != null) {
             final ICodeInfo elseBlockCode = elseBlock.iCode(lt, st.yield(Collections.emptyMap()),
                     lpBegin, lpEnd, thenBlockCode.tempCount).second;
-            end.link(elseBlockCode.first);
-            lt.assignLabelToCode(elseEndLabel, elseBlockCode.second);
+            final IntermediateCode elseEnd = new Nop();
+            thenEnd.link(elseBlockCode.first);
+            elseBlockCode.second.link(elseEnd);
+            lt.assignLabelToCode(elseEndLabel, elseEnd);
             return Pair.of(st, new ICodeInfo(conditionCode.first,
-                    elseBlockCode.second, null, elseBlockCode.tempCount));
+                    elseEnd, null, elseBlockCode.tempCount));
         } else {
-            lt.assignLabelToCode(elseEndLabel, end);
+            lt.assignLabelToCode(elseEndLabel, thenEnd);
         }
-        return Pair.of(st, new ICodeInfo(conditionCode.first, end, null, thenBlockCode.tempCount));
+        return Pair.of(st, new ICodeInfo(conditionCode.first, thenEnd, null, thenBlockCode.tempCount));
     }
 
     @Override

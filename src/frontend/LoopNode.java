@@ -30,8 +30,11 @@ public class LoopNode implements StmtNode {
 
     @Override
     public Pair<SymbolTable, SyntaxNode> simplify(SymbolTable symbolTable) {
-        return Pair.of(symbolTable, new LoopNode((ExprNode) condition.simplify(symbolTable).second,
-                (StmtNode) loopBody.simplify(symbolTable.yield(Collections.emptyMap())).second));
+        final ExprNode simCond = (ExprNode) condition.simplify(symbolTable).second;
+        final StmtNode simBody = (StmtNode) loopBody.simplify(symbolTable.yield(Collections.emptyMap())).second;
+        final BranchNode branchNode = (BranchNode) new BranchNode(simCond, simBody, new BreakNode(0))
+                .simplify(symbolTable).second;
+        return Pair.of(symbolTable, new LoopNode(new ConstNode(1), branchNode));
     }
 
     @Override

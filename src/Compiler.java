@@ -115,9 +115,9 @@ public class Compiler {
                         make.add(s + ":");
                     }
                 }
-                if (!(p instanceof Nop)) {
+//                if (!(p instanceof Nop)) {
                     make.add(p.toString());
-                }
+//                }
                 p = p.getNext();
             }
             SimpleIO.output(out, make, StringJoiner::toString);
