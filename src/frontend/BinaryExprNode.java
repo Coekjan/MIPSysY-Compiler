@@ -1,6 +1,10 @@
 package frontend;
 
 import exceptions.SysYException;
+import midend.AssignBinaryOperation;
+import midend.IntermediateCode;
+import midend.LabelTable;
+import midend.Value;
 import utils.Pair;
 
 import java.util.Collections;
@@ -67,6 +71,36 @@ public class BinaryExprNode implements ExprNode {
             return Pair.of(symbolTable, new ConstNode(operate(((ConstNode) l).constant, ((ConstNode) r).constant)));
         }
         return Pair.of(symbolTable, new BinaryExprNode(operator, l, r));
+    }
+
+    @Override
+    public Pair<SymbolTable, ICodeInfo> iCode(LabelTable lt, SymbolTable st, String lpBegin, String lpEnd, int tc) {
+        final Map<Operator, AssignBinaryOperation.BinaryOperation> opMap =
+                Collections.unmodifiableMap(new HashMap<Operator, AssignBinaryOperation.BinaryOperation>() {{
+                    put(Operator.ADD, AssignBinaryOperation.BinaryOperation.ADD);
+                    put(Operator.SUB, AssignBinaryOperation.BinaryOperation.SUB);
+                    put(Operator.MUL, AssignBinaryOperation.BinaryOperation.MUL);
+                    put(Operator.DIV, AssignBinaryOperation.BinaryOperation.DIV);
+                    put(Operator.MOD, AssignBinaryOperation.BinaryOperation.MOD);
+                    put(Operator.AND, AssignBinaryOperation.BinaryOperation.AND);
+                    put(Operator.OR, AssignBinaryOperation.BinaryOperation.OR);
+                    put(Operator.GT, AssignBinaryOperation.BinaryOperation.GT);
+                    put(Operator.GE, AssignBinaryOperation.BinaryOperation.GE);
+                    put(Operator.LT, AssignBinaryOperation.BinaryOperation.LT);
+                    put(Operator.LE, AssignBinaryOperation.BinaryOperation.LE);
+                    put(Operator.EQ, AssignBinaryOperation.BinaryOperation.EQ);
+                    put(Operator.NE, AssignBinaryOperation.BinaryOperation.NE);
+                }});
+        final Pair<SymbolTable, ICodeInfo> l = left.iCode(lt, st, lpBegin, lpEnd, tc);
+        final Pair<SymbolTable, ICodeInfo> r = right.iCode(lt, st, lpBegin, lpEnd, l.second.tempCount);
+        final Value lv = l.second.finalSym;
+        final Value rv = r.second.finalSym;
+        final Value yieldValue = Value.pack(lv, rv, String.valueOf(r.second.tempCount + 1));
+        l.second.second.link(r.second.first);
+        final IntermediateCode code = new AssignBinaryOperation(true, yieldValue,
+                opMap.get(operator), lv, rv);
+        r.second.second.link(code);
+        return Pair.of(st, new ICodeInfo(l.second.first, code, yieldValue, r.second.tempCount + 1));
     }
 
     @Override

@@ -1,9 +1,12 @@
 package frontend;
 
 import exceptions.SysYException;
+import midend.*;
 import utils.Pair;
 
 import java.util.*;
+
+import static frontend.ConstNode.ZERO;
 
 public class DeclNode implements BlockItemNode, VarDefNode {
     public final boolean modifiable;
@@ -59,5 +62,47 @@ public class DeclNode implements BlockItemNode, VarDefNode {
         }
         final DeclNode res = new DeclNode(modifiable, simDef);
         return Pair.of(next, res);
+    }
+
+    @Override
+    public Pair<SymbolTable, ICodeInfo> iCode(LabelTable lt, SymbolTable st, String lpBegin, String lpEnd, int tc) {
+        return iCode(lt, st, lpBegin, lpEnd, tc, false);
+    }
+
+    public Pair<SymbolTable, ICodeInfo> iCode(LabelTable lt, SymbolTable st, String lpBegin, String lpEnd, int tc, boolean global) {
+        SymbolTable next = st;
+        int tempCount = tc;
+        IntermediateCode last = new Nop();
+        final IntermediateCode head = last;
+        final DeclNode self = this;
+        for (DefNode defNode : defNodes) {
+            final String name = defNode.name;
+            next = next.update(new HashMap<String, VarDefNode>(next.getHead()) {{
+                put(name, self);
+            }});
+            final List<Value> initValues = new ArrayList<>();
+            for (ExprNode e : defNode.initValues) {
+                final ICodeInfo code = e.iCode(lt, next, lpBegin, lpEnd, tempCount).second;
+                last.link(code.first);
+                last = code.second;
+                initValues.add(code.finalSym);
+                tempCount = code.tempCount;
+            }
+            if (defNode.dimensions.first == ZERO && defNode.dimensions.second == ZERO) {
+                assert initValues.size() <= 1;
+                final WordValue word = new WordValue(name + "%" + next.tellDepth(name));
+                final Declaration decl = new Declaration(global, modifiable, word, 1, initValues);
+                last.link(decl);
+                last = decl;
+            } else {
+                final AddrValue addr = new AddrValue(name + "%" + next.tellDepth(name));
+                final Declaration decl = new Declaration(global, modifiable, addr,
+                        ((ConstNode) defNode.dimensions.first).constant *
+                                ((ConstNode) defNode.dimensions.second).constant, initValues);
+                last.link(decl);
+                last = decl;
+            }
+        }
+        return Pair.of(next, new ICodeInfo(head, last, null, tempCount));
     }
 }

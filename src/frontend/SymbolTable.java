@@ -56,6 +56,19 @@ public class SymbolTable {
         return Optional.empty();
     }
 
+    public int tellDepth() {
+        return variableMapList.size();
+    }
+
+    public int tellDepth(String name) {
+        for (int i = 0; i < variableMapList.size(); ++i) {
+            if (variableMapList.get(i).containsKey(name)) {
+                return variableMapList.size() - i;
+            }
+        }
+        return 0;
+    }
+
     public SymbolTable fixVarRef(VarDefNode origin, VarDefNode target) {
         final List<Map<String, VarDefNode>> fixMapList = new ArrayList<>();
         for (Map<String, VarDefNode> map : variableMapList) {

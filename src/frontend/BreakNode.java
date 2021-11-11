@@ -1,6 +1,9 @@
 package frontend;
 
 import exceptions.SysYException;
+import midend.IntermediateCode;
+import midend.Jump;
+import midend.LabelTable;
 import utils.Pair;
 
 public class BreakNode implements StmtNode {
@@ -26,5 +29,11 @@ public class BreakNode implements StmtNode {
     @Override
     public Pair<SymbolTable, SyntaxNode> simplify(SymbolTable symbolTable) {
         return Pair.of(symbolTable, this);
+    }
+
+    @Override
+    public Pair<SymbolTable, ICodeInfo> iCode(LabelTable lt, SymbolTable st, String lpBegin, String lpEnd, int tc) {
+        final IntermediateCode breakJump = new Jump(lpEnd);
+        return Pair.of(st, new ICodeInfo(breakJump, breakJump, null, tc));
     }
 }

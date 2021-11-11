@@ -1,6 +1,7 @@
 package frontend;
 
 import exceptions.SysYException;
+import midend.LabelTable;
 import utils.Pair;
 
 import java.util.Collections;
@@ -51,5 +52,11 @@ public class DefNode implements SyntaxNode {
             simInit.add((ExprNode) p.second);
         }
         return Pair.of(symbolTable, new DefNode(name, line, Pair.of(f, s), simInit));
+    }
+
+    @Override
+    public Pair<SymbolTable, ICodeInfo> iCode(LabelTable lt, SymbolTable st, String lpBegin, String lpEnd, int tc) {
+        // Should not be called
+        throw new IllegalAccessError();
     }
 }

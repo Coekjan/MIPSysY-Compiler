@@ -1,6 +1,10 @@
 package frontend;
 
 import exceptions.SysYException;
+import midend.AssignUnaryOperation;
+import midend.IntermediateCode;
+import midend.LabelTable;
+import midend.WordValue;
 import utils.Pair;
 
 import java.util.Collections;
@@ -59,5 +63,21 @@ public class UnaryExprNode implements ExprNode {
             return Pair.of(symbolTable, new ConstNode(operate(((ConstNode) simExpr).constant)));
         }
         return Pair.of(symbolTable, new UnaryExprNode(operator, simExpr));
+    }
+
+    @Override
+    public Pair<SymbolTable, ICodeInfo> iCode(LabelTable lt, SymbolTable st, String lpBegin, String lpEnd, int tc) {
+        final Map<Operator, AssignUnaryOperation.UnaryOperation> operations =
+                Collections.unmodifiableMap(new HashMap<Operator, AssignUnaryOperation.UnaryOperation>() {{
+                    put(Operator.POS, AssignUnaryOperation.UnaryOperation.POS);
+                    put(Operator.NEG, AssignUnaryOperation.UnaryOperation.NEG);
+                    put(Operator.NOT, AssignUnaryOperation.UnaryOperation.NOT);
+                }});
+        final ICodeInfo exprCode = exprNode.iCode(lt, st, lpBegin, lpEnd, tc).second;
+        final WordValue word = new WordValue(String.valueOf(exprCode.tempCount + 1));
+        final IntermediateCode code = new AssignUnaryOperation(true, word, operations.get(operator),
+                exprCode.finalSym);
+        exprCode.second.link(code);
+        return Pair.of(st, new ICodeInfo(exprCode.first, code, word, exprCode.tempCount + 1));
     }
 }

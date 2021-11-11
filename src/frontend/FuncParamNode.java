@@ -1,7 +1,10 @@
 package frontend;
 
 import exceptions.SysYException;
+import midend.*;
 import utils.Pair;
+
+import static frontend.ConstNode.ZERO;
 
 public class FuncParamNode implements SyntaxNode {
     public final String name;
@@ -35,5 +38,16 @@ public class FuncParamNode implements SyntaxNode {
         final ExprNode f = (ExprNode) dimensions.first.simplify(symbolTable).second;
         final ExprNode s = (ExprNode) dimensions.second.simplify(symbolTable).second;
         return Pair.of(symbolTable, new FuncParamNode(name, line, Pair.of(f, s)));
+    }
+
+    @Override
+    public Pair<SymbolTable, ICodeInfo> iCode(LabelTable lt, SymbolTable st, String lpBegin, String lpEnd, int tc) {
+        if (dimensions.first == ZERO && dimensions.second == ZERO) {
+            final IntermediateCode word = new ParameterFetch(new WordValue(name + "%" + st.tellDepth()));
+            return Pair.of(st, new ICodeInfo(word, word, null, tc));
+        } else {
+            final IntermediateCode addr = new ParameterFetch(new AddrValue(name + "%" + st.tellDepth()));
+            return Pair.of(st, new ICodeInfo(addr, addr, null, tc));
+        }
     }
 }

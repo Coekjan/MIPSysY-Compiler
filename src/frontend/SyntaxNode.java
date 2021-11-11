@@ -1,6 +1,7 @@
 package frontend;
 
 import exceptions.SysYException;
+import midend.LabelTable;
 import utils.Pair;
 
 import java.util.LinkedList;
@@ -13,4 +14,6 @@ public interface SyntaxNode {
 
     // should be called after check
     Pair<SymbolTable, SyntaxNode> simplify(SymbolTable symbolTable);
+
+    Pair<SymbolTable, ICodeInfo> iCode(LabelTable lt, SymbolTable st, String lpBegin, String lpEnd, int tc);
 }

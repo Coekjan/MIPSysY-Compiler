@@ -1,6 +1,7 @@
 package frontend;
 
 import exceptions.SysYException;
+import midend.*;
 import utils.Pair;
 
 public class ConstNode implements ExprNode {
@@ -30,6 +31,13 @@ public class ConstNode implements ExprNode {
     @Override
     public Pair<SymbolTable, SyntaxNode> simplify(SymbolTable symbolTable) {
         return Pair.of(symbolTable, this);
+    }
+
+    @Override
+    public Pair<SymbolTable, ICodeInfo> iCode(LabelTable lt, SymbolTable st, String lpBegin, String lpEnd, int tc) {
+        final WordValue word = new WordValue(String.valueOf(tc + 1));
+        final IntermediateCode con = new Move(true, word, new ImmValue(constant));
+        return Pair.of(st, new ICodeInfo(con, con, word, tc + 1));
     }
 
     @Override

@@ -21,7 +21,7 @@ public abstract class SyntaxTreeBuilder {
         if (parserUnit.derivations.get(2).name.equals("Exp")) {
             return new AssignNode(left, toExpr(parserUnit.derivations.get(2)));
         }
-        return new AssignNode(left, new FuncCallNode((Token) parserUnit.derivations.get(2), Collections.emptyList()));
+        return new AssignNode(left, new GetIntNode((Token) parserUnit.derivations.get(2)));
     }
     
     private static BinaryExprNode toBinaryExpr(ParserUnit parserUnit) {
@@ -149,7 +149,7 @@ public abstract class SyntaxTreeBuilder {
                 case CONTINUETK: return toCont(parserUnit);
                 case RETURNTK: return toReturn(parserUnit);
                 case PRINTFTK: return new PrintNode(((Token) first),
-                        new StringExprNode((Token) parserUnit.derivations.get(2)),
+                        ((Token) parserUnit.derivations.get(2)).content,
                         parserUnit.derivations.stream()
                                 .filter(u -> u.name.equals("Exp"))
                                 .map(SyntaxTreeBuilder::toExpr).collect(Collectors.toList()));

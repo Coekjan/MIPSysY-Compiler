@@ -1,6 +1,7 @@
 package frontend;
 
 import exceptions.SysYException;
+import midend.*;
 import utils.Pair;
 
 import java.util.*;
@@ -73,6 +74,28 @@ public class FuncCallNode implements ExprNode {
             simArgs.add((ExprNode) exprNode.simplify(symbolTable).second);
         }
         return Pair.of(symbolTable, new FuncCallNode(name, line, simArgs));
+    }
+
+    @Override
+    public Pair<SymbolTable, ICodeInfo> iCode(LabelTable lt, SymbolTable st, String lpBegin, String lpEnd, int tc) {
+        int tempCount = tc;
+        IntermediateCode last = new Nop();
+        final IntermediateCode head = last;
+        for (int i = arguments.size() - 1; i >= 0; i--) {
+            final ExprNode exprNode = arguments.get(i);
+            final ICodeInfo code = exprNode.iCode(lt, st, lpBegin, lpEnd, tempCount).second;
+            final IntermediateCode push = new PushArgument(code.finalSym);
+            tempCount = code.tempCount;
+            last.link(code.first);
+            code.second.link(push);
+            last = push;
+        }
+        final IntermediateCode call = new CallFunction(name);
+        last.link(call);
+        final WordValue ret = new WordValue(String.valueOf(tempCount + 1));
+        final IntermediateCode getRet = new Move(true, ret, new WordValue(Return.RET_SYM));
+        call.link(getRet);
+        return Pair.of(st, new ICodeInfo(head, getRet, ret, tempCount + 1));
     }
 
     @Override

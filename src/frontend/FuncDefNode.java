@@ -1,6 +1,9 @@
 package frontend;
 
 import exceptions.SysYException;
+import midend.FuncEntry;
+import midend.IntermediateCode;
+import midend.LabelTable;
 import utils.Pair;
 
 import java.util.*;
@@ -76,5 +79,30 @@ public class FuncDefNode implements VarDefNode {
         final Pair<SymbolTable, SyntaxNode> simBlk = block.simplify(next);
         final FuncDefNode res = new FuncDefNode(returnInt, name, line, simPara, (FuncBlockNode) simBlk.second);
         return Pair.of(symbolTable.fixFuncRef(self, res), res);
+    }
+
+    @Override
+    public Pair<SymbolTable, ICodeInfo> iCode(LabelTable lt, SymbolTable st, String lpBegin, String lpEnd, int tc) {
+        final IntermediateCode head = new FuncEntry(name, parameters.size());
+        lt.assignLabelToCode(name, head);
+        IntermediateCode last = head;
+        int tempCount = tc;
+        final FuncDefNode self = this;
+        st = new SymbolTable(st, new HashMap<String, FuncDefNode>() {{
+            put(name, self);
+        }});
+        SymbolTable next = st.yield(Collections.emptyMap());
+        for (FuncParamNode paramNode : parameters) {
+            final ICodeInfo code = paramNode.iCode(lt, next, lpBegin, lpEnd, tempCount).second;
+            next = next.update(new HashMap<String, VarDefNode>(next.getHead()) {{
+                put(paramNode.name, self);
+            }});
+            last.link(code.first);
+            last = code.second;
+            tempCount = code.tempCount;
+        }
+        final ICodeInfo body = block.iCode(lt, next, lpBegin, lpEnd, tempCount).second;
+        last.link(body.first);
+        return Pair.of(st, new ICodeInfo(head, body.second, null, body.tempCount));
     }
 }

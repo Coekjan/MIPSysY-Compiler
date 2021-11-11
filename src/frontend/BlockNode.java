@@ -1,6 +1,9 @@
 package frontend;
 
 import exceptions.SysYException;
+import midend.IntermediateCode;
+import midend.LabelTable;
+import midend.Nop;
 import utils.Pair;
 
 import java.util.Collections;
@@ -42,6 +45,24 @@ public class BlockNode implements StmtNode {
             simBlkItem.add((BlockItemNode) p.second);
         }
         return Pair.of(symbolTable, new BlockNode(simBlkItem));
+    }
+
+    @Override
+    public Pair<SymbolTable, ICodeInfo> iCode(LabelTable lt, SymbolTable st, String lpBegin, String lpEnd, int tc) {
+        SymbolTable next = st;
+        int tempCount = tc;
+        IntermediateCode last = new Nop();
+        final IntermediateCode head = last;
+        for (BlockItemNode item : items) {
+            final Pair<SymbolTable, ICodeInfo> p = item.iCode(lt,
+                    item instanceof BlockNode ? next.yield(Collections.emptyMap()) : next, lpBegin, lpEnd, tempCount);
+            final ICodeInfo code = p.second;
+            next = p.first;
+            tempCount = code.tempCount;
+            last.link(code.first);
+            last = code.second;
+        }
+        return Pair.of(st, new ICodeInfo(head, last, null, tempCount));
     }
 
     @Override

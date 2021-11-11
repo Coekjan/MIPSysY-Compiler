@@ -1,6 +1,9 @@
 package frontend;
 
 import exceptions.SysYException;
+import midend.IntermediateCode;
+import midend.LabelTable;
+import midend.Return;
 import utils.Pair;
 
 import java.util.List;
@@ -37,5 +40,13 @@ public class FuncBlockNode extends BlockNode {
             }
         }
         return symbolTable;
+    }
+
+    @Override
+    public Pair<SymbolTable, ICodeInfo> iCode(LabelTable lt, SymbolTable st, String lpBegin, String lpEnd, int tc) {
+        final Pair<SymbolTable, ICodeInfo> p = super.iCode(lt, st, lpBegin, lpEnd, tc);
+        final IntermediateCode ret = new Return();
+        p.second.second.link(ret);
+        return Pair.of(p.first, new ICodeInfo(p.second.first, ret, null, p.second.tempCount));
     }
 }

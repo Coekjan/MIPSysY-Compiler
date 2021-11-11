@@ -1,6 +1,9 @@
 package frontend;
 
 import exceptions.SysYException;
+import midend.IntermediateCode;
+import midend.LabelTable;
+import midend.Return;
 import utils.Pair;
 
 import java.util.Collections;
@@ -43,5 +46,18 @@ public class ReturnNode implements StmtNode {
         if (returnValue != null) return Pair.of(symbolTable,
                 new ReturnNode(line, (ExprNode) returnValue.simplify(symbolTable).second));
         return Pair.of(symbolTable, this);
+    }
+
+    @Override
+    public Pair<SymbolTable, ICodeInfo> iCode(LabelTable lt, SymbolTable st, String lpBegin, String lpEnd, int tc) {
+        if (returnValue != null) {
+            final ICodeInfo exprCode = returnValue.iCode(lt, st, lpBegin, lpEnd, tc).second;
+            final IntermediateCode ret = new Return(exprCode.finalSym);
+            exprCode.second.link(ret);
+            return Pair.of(st, new ICodeInfo(exprCode.first, ret, null, exprCode.tempCount));
+        } else {
+            final IntermediateCode ret = new Return();
+            return Pair.of(st, new ICodeInfo(ret, ret, null, tc));
+        }
     }
 }

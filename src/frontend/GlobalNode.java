@@ -1,6 +1,7 @@
 package frontend;
 
 import exceptions.SysYException;
+import midend.*;
 import utils.Pair;
 
 import java.util.Collections;
@@ -56,5 +57,35 @@ public class GlobalNode implements SyntaxNode {
         final Pair<SymbolTable, SyntaxNode> p = mainFuncDef.simplify(next);
         final FuncDefNode simMain = (FuncDefNode) p.second;
         return Pair.of(p.first, new GlobalNode(simDecl, simFunc, simMain));
+    }
+
+    @Override
+    public Pair<SymbolTable, ICodeInfo> iCode(LabelTable lt, SymbolTable st, String lpBegin, String lpEnd, int tc) {
+        int tempCount = tc;
+        IntermediateCode last = new Nop();
+        SymbolTable next = st;
+        final IntermediateCode head = last;
+        for (DeclNode declNode : declNodes) {
+            final Pair<SymbolTable, ICodeInfo> p = declNode.iCode(lt, next, lpBegin, lpEnd, tempCount, true);
+            next = p.first;
+            last.link(p.second.first);
+            last = p.second.second;
+            tempCount = p.second.tempCount;
+        }
+        final IntermediateCode callMain = new CallFunction("main");
+        final IntermediateCode exit = new Exit();
+        last.link(callMain);
+        callMain.link(exit);
+        last = exit;
+        for (FuncDefNode funcDefNode : funcDefNodes) {
+            final Pair<SymbolTable, ICodeInfo> p = funcDefNode.iCode(lt, next, lpBegin, lpEnd, tempCount);
+            next = p.first;
+            last.link(p.second.first);
+            last = p.second.second;
+            tempCount = p.second.tempCount;
+        }
+        final Pair<SymbolTable, ICodeInfo> p = mainFuncDef.iCode(lt, next, lpBegin, lpEnd, tempCount);
+        last.link(p.second.first);
+        return Pair.of(p.first, new ICodeInfo(head, p.second.second, null, p.second.tempCount));
     }
 }
