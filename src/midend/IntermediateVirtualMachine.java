@@ -86,7 +86,7 @@ public class IntermediateVirtualMachine {
         returnValue = value;
         varStack.remove(0);
         final Collection<Pair<Integer, Integer>> space = arrStack.remove(0).values();
-        memPeak = space.stream().map(p -> p.first).min(Integer::compare).orElse(memPeak);
+        memPeak = space.stream().map(p -> p.first).min(Integer::compare).orElse(memPeak + 1) - 1;
         return callReturnStack.pop();
     }
 

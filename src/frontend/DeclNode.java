@@ -96,9 +96,11 @@ public class DeclNode implements BlockItemNode, VarDefNode {
                 last = decl;
             } else {
                 final AddrValue addr = new AddrValue(name + "%" + next.tellDepth(name));
-                final Declaration decl = new Declaration(global, modifiable, addr,
+                final int size = defNode.dimensions.second == ZERO ?
+                        ((ConstNode) defNode.dimensions.first).constant :
                         ((ConstNode) defNode.dimensions.first).constant *
-                                ((ConstNode) defNode.dimensions.second).constant, initValues);
+                                ((ConstNode) defNode.dimensions.second).constant;
+                final Declaration decl = new Declaration(global, modifiable, addr, size, initValues);
                 last.link(decl);
                 last = decl;
             }

@@ -14,6 +14,7 @@ public class ParameterFetch extends IntermediateCode {
 
     @Override
     IntermediateCode execute(IntermediateVirtualMachine machine, LabelTable labelTable) {
+        machine.createVar(name.symbol);
         machine.updateVar(name.symbol, machine.popArg());
         return next;
     }
