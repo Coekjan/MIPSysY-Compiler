@@ -12,7 +12,7 @@ do
   java -jar ../out/artifacts/mipsysy_compiler_jar/mipsysy-compiler.jar < ./input.txt > ./out.txt
   if ! diff ./std.txt ./out.txt --suppress-common-lines --side-by-side --ignore-all-space --ignore-blank-lines
   then
-    echo WRONG ANWSER!
+    echo WRONG ANSWER!
     exit 1
   fi
 done
