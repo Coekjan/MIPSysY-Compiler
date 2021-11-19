@@ -1,6 +1,8 @@
 package midend;
 
-public class Move extends IntermediateCode {
+import utils.Pair;
+
+public class Move extends IntermediateCode implements IntroSpace {
     public final boolean temporary;
     public final Value left;
     public final Value right;
@@ -18,8 +20,13 @@ public class Move extends IntermediateCode {
 
     @Override
     IntermediateCode execute(IntermediateVirtualMachine machine, LabelTable labelTable) {
-        if (temporary) machine.createVar(left.symbol);
-        machine.updateVar(left.symbol, right.get(machine));
+        if (temporary) machine.createVar(left);
+        machine.updateVar(left, right.get(machine));
         return next;
+    }
+
+    @Override
+    public Pair<Value, Integer> getSize() {
+        return Pair.of(left, temporary ? 1 : 0);
     }
 }

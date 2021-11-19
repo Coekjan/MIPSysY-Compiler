@@ -1,13 +1,25 @@
 package midend;
 
+import utils.Pair;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringJoiner;
 
-public class AssignBinaryOperation extends IntermediateCode {
+public class AssignBinaryOperation extends IntermediateCode implements IntroSpace {
+    @Override
+    public Pair<Value, Integer> getSize() {
+        return Pair.of(left, temporary ? 1 : 0);
+    }
+
     public enum BinaryOperation {
-        ADD, SUB, MUL, DIV, MOD, AND, OR, GT, GE, LT, LE, EQ, NE
+        ADD, SUB, MUL, DIV, MOD, AND, OR, GT, GE, LT, LE, EQ, NE;
+
+        @Override
+        public String toString() {
+            return name().toLowerCase();
+        }
     }
 
     @FunctionalInterface
@@ -60,10 +72,10 @@ public class AssignBinaryOperation extends IntermediateCode {
                     put(BinaryOperation.EQ, (x, y) -> x == y ? 1 : 0);
                     put(BinaryOperation.NE, (x, y) -> x != y ? 1 : 0);
                 }});
-        if (temporary) machine.createVar(left.symbol);
+        if (temporary) machine.createVar(left);
         final int val1 = op1.get(machine);
         final int val2 = op2.get(machine);
-        machine.updateVar(left.symbol, operations.get(operation).calc(val1, val2));
+        machine.updateVar(left, operations.get(operation).calc(val1, val2));
         return next;
     }
 }

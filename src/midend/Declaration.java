@@ -1,10 +1,12 @@
 package midend;
 
+import utils.Pair;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.StringJoiner;
 
-public class Declaration extends IntermediateCode {
+public class Declaration extends IntermediateCode implements IntroSpace {
     public final boolean global;
     public final boolean modifiable;
     public final Value symbol;
@@ -33,15 +35,20 @@ public class Declaration extends IntermediateCode {
     @Override
     IntermediateCode execute(IntermediateVirtualMachine machine, LabelTable labelTable) {
         if (symbol instanceof AddrValue) {
-            machine.createArr(symbol.symbol, size);
+            machine.createArr((AddrValue) symbol, size);
             final int baseAddress = symbol.get(machine);
             for (int i = 0; i < initValues.size(); ++i) {
                 machine.save(baseAddress + i, initValues.get(i).get(machine));
             }
         } else {
-            machine.createVar(symbol.symbol);
-            if (!initValues.isEmpty()) machine.updateVar(symbol.symbol, initValues.get(0).get(machine));
+            machine.createVar(symbol);
+            if (!initValues.isEmpty()) machine.updateVar(symbol, initValues.get(0).get(machine));
         }
         return next;
+    }
+
+    @Override
+    public Pair<Value, Integer> getSize() {
+        return Pair.of(symbol, size);
     }
 }

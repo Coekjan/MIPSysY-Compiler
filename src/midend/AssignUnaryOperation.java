@@ -1,13 +1,25 @@
 package midend;
 
+import utils.Pair;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringJoiner;
 
-public class AssignUnaryOperation extends IntermediateCode {
+public class AssignUnaryOperation extends IntermediateCode implements IntroSpace {
+    @Override
+    public Pair<Value, Integer> getSize() {
+        return Pair.of(left, temporary ? 1 : 0);
+    }
+
     public enum UnaryOperation {
-        POS, NEG, NOT
+        POS, NEG, NOT;
+
+        @Override
+        public String toString() {
+            return name().toLowerCase();
+        }
     }
 
     @FunctionalInterface
@@ -47,8 +59,8 @@ public class AssignUnaryOperation extends IntermediateCode {
                     put(UnaryOperation.NEG, x -> -x);
                     put(UnaryOperation.NOT, x -> x != 0 ? 0 : 1);
                 }});
-        if (temporary) machine.createVar(left.symbol);
-        machine.updateVar(left.symbol,
+        if (temporary) machine.createVar(left);
+        machine.updateVar(left,
                 operations.get(operation).calc(op.get(machine)));
         return next;
     }

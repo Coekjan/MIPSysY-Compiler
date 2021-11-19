@@ -1,5 +1,7 @@
 package midend;
 
+import java.util.Objects;
+
 public abstract class Value {
     public final String symbol;
 
@@ -20,4 +22,17 @@ public abstract class Value {
     }
 
     abstract int get(IntermediateVirtualMachine machine);
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Value value = (Value) o;
+        return Objects.equals(symbol, value.symbol);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(symbol);
+    }
 }

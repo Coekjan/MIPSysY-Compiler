@@ -5,7 +5,7 @@ import java.util.Optional;
 public class Return extends IntermediateCode {
     public static final String RET_SYM = "%ret%";
 
-    private final Value name;
+    public final Value name;
 
     public Return() {
         this(null);

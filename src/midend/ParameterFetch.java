@@ -1,6 +1,8 @@
 package midend;
 
-public class ParameterFetch extends IntermediateCode {
+import utils.Pair;
+
+public class ParameterFetch extends IntermediateCode implements IntroSpace {
     public final Value name;
 
     public ParameterFetch(Value name) {
@@ -14,8 +16,13 @@ public class ParameterFetch extends IntermediateCode {
 
     @Override
     IntermediateCode execute(IntermediateVirtualMachine machine, LabelTable labelTable) {
-        machine.createVar(name.symbol);
-        machine.updateVar(name.symbol, machine.popArg());
+        machine.createVar(name);
+        machine.updateVar(name, machine.popArg());
         return next;
+    }
+
+    @Override
+    public Pair<Value, Integer> getSize() {
+        return Pair.of(name, 1);
     }
 }

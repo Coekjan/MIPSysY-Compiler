@@ -16,7 +16,7 @@ public class Save extends IntermediateCode {
 
     @Override
     IntermediateCode execute(IntermediateVirtualMachine machine, LabelTable labelTable) {
-        machine.save(machine.findVar(base.symbol), right.get(machine));
+        machine.save(machine.findVar(base), right.get(machine));
         return next;
     }
 }

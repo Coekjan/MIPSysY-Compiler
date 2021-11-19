@@ -101,7 +101,7 @@ public class LValNode implements ExprNode {
                         new AddrValue(name + "%" + depth), exprCode.finalSym);
                 exprCode.second.link(calAddr);
                 final WordValue word = new WordValue(String.valueOf(exprCode.tempCount + 2));
-                final IntermediateCode load = new Load(word, addr);
+                final IntermediateCode load = new Load(true, word, addr);
                 calAddr.link(load);
                 return Pair.of(st, new ICodeInfo(exprCode.first, load, word, exprCode.tempCount + 2));
             }
@@ -145,7 +145,7 @@ public class LValNode implements ExprNode {
                         new AddrValue(name + "%" + depth), offset);
                 calOffset.link(calAddr);
                 final WordValue word = new WordValue(String.valueOf(colExprCode.tempCount + 3));
-                final IntermediateCode load = new Load(word, addr);
+                final IntermediateCode load = new Load(true, word, addr);
                 calAddr.link(load);
                 return Pair.of(st, new ICodeInfo(rowExprCode.first, load, word, colExprCode.tempCount + 3));
             }

@@ -9,7 +9,7 @@ do
   cp "$path"/input"$n".txt ./input.txt
   cp "$path"/output"$n".txt ./std.txt
   echo "> RUNNING testfile$n.txt"
-  java -jar ../out/artifacts/mipsysy_compiler_jar/mipsysy-compiler.jar < ./input.txt > ./out.txt
+  java -jar ../out/artifacts/mipsysy_compiler_jar/mipsysy-compiler.jar -ea < ./input.txt > ./out.txt
   if ! diff ./std.txt ./out.txt --suppress-common-lines --side-by-side --ignore-all-space --ignore-blank-lines
   then
     echo WRONG ANSWER!

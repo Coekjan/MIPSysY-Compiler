@@ -12,6 +12,6 @@ public class AddrValue extends Value {
 
     @Override
     int get(IntermediateVirtualMachine machine) {
-        return machine.findVar(symbol);
+        return machine.findVar(this);
     }
 }
