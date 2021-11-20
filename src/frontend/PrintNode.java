@@ -50,14 +50,17 @@ public class PrintNode extends FuncCallNode {
         int tempCount = tc;
         IntermediateCode last = new Nop();
         final IntermediateCode head = last;
+        final List<Value> args = new LinkedList<>();
         for (int i = arguments.size() - 1; i >= 0; i--) {
             final ExprNode exprNode = arguments.get(i);
             final ICodeInfo code = exprNode.iCode(lt, st, lpBegin, lpEnd, tempCount).second;
-            final IntermediateCode push = new PushArgument(code.finalSym);
+            args.add(code.finalSym);
             tempCount = code.tempCount;
             last.link(code.first);
-            code.second.link(push);
-            last = push;
+            last = code.second;
+        }
+        for (Value arg : args) {
+            last = last.link(new PushArgument(arg));
         }
         final IntermediateCode print = new Print(strNode);
         last.link(print);

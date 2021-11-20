@@ -11,6 +11,19 @@ public abstract class MIPSCode extends LinkedNode<MIPSCode> {
         return stringify();
     }
 
+    public static class Comment extends MIPSCode {
+        public final String s;
+
+        public Comment(String s) {
+            this.s = s;
+        }
+
+        @Override
+        String stringify() {
+            return "# " + s;
+        }
+    }
+
     public static class NopCode extends MIPSCode {
         @Override
         String stringify() {
@@ -35,7 +48,7 @@ public abstract class MIPSCode extends LinkedNode<MIPSCode> {
 
     public static class BinaryRegImmCode extends MIPSCode {
         public enum Op {
-            ADDIU, SUBIU, MUL, DIV, REM, ANDI, ORI, SGT, SGE, SLTI, SLE, SEQ, SNE;
+            ADDIU, SUBIU, MUL, DIV, REM, ANDI, ORI, SGT, SGE, SLTI, SLE, SEQ, SNE, SLL;
 
             @Override
             public String toString() {
@@ -220,11 +233,11 @@ public abstract class MIPSCode extends LinkedNode<MIPSCode> {
         }
     }
 
-    public static class LoadAddressCode extends MIPSCode {
+    public static class LoadLabelAddressCode extends MIPSCode {
         public final Reg reg;
         public final String label;
 
-        public LoadAddressCode(Reg reg, String label) {
+        public LoadLabelAddressCode(Reg reg, String label) {
             this.reg = reg;
             this.label = label;
         }
@@ -232,6 +245,21 @@ public abstract class MIPSCode extends LinkedNode<MIPSCode> {
         @Override
         String stringify() {
             return "la " + reg + ", " + label;
+        }
+    }
+
+    public static class LoadAddressCode extends MIPSCode {
+        public final Reg reg;
+        public final Address address;
+
+        public LoadAddressCode(Reg reg, Address address) {
+            this.reg = reg;
+            this.address = address;
+        }
+
+        @Override
+        String stringify() {
+            return "la " + reg + ", " + address;
         }
     }
 }

@@ -184,6 +184,6 @@ public class Compiler {
     }
 
     public static void main(String[] args) throws IOException {
-        mipsTest("testfile.txt", "output.txt");
+        mipsTest("testfile.txt", "mips.txt");
     }
 }

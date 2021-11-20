@@ -24,7 +24,8 @@ public class IntermediateVirtualMachine {
     public List<Map<Value, List<Integer>>> getProgStack() {
         final List<Map<Value, List<Integer>>> var = varStack.stream()
                 .map(m -> m.keySet().stream()
-                        .filter(k -> k.symbol.length() > 1 && !Character.isDigit(k.symbol.charAt(1)))
+                        .filter(k -> k.symbol.length() > 1 && !(k instanceof AddrValue) &&
+                                !Character.isDigit(k.symbol.charAt(0)))
                         .collect(Collectors.toMap(k -> k, k -> Collections.singletonList(m.get(k)))))
                 .collect(Collectors.toList());
         final List<Map<Value, List<Integer>>> arr = arrStack.stream()
@@ -34,9 +35,9 @@ public class IntermediateVirtualMachine {
                                 k -> Arrays.stream(arrayMem).boxed().collect(Collectors.toList())
                                         .subList(m.get(k).first, m.get(k).second + 1))))
                 .collect(Collectors.toList());
-        return new ArrayList<Map<Value, List<Integer>>>(var) {{
-            addAll(arr);
-        }};
+        assert var.size() == 1 && arr.size() == 1;
+        var.get(0).putAll(arr.get(0));
+        return var;
     }
 
     public void run(LabelTable lt) {

@@ -15,7 +15,7 @@ public class Load extends IntermediateCode implements IntroSpace {
 
     @Override
     String display() {
-        return temporary ? "temp " : "save " + left + " <- *" + base;
+        return (temporary ? "temp " : "save ") + left + " <- *" + base;
     }
 
     @Override

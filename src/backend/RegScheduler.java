@@ -18,5 +18,11 @@ public interface RegScheduler {
      */
     Optional<Reg> allocReg(Value name, Collection<Reg> holdRegs);
 
+    void remove(Reg reg);
+
+    void clear();
+
+    Optional<Reg> find(Value name);
+
     Map<Reg, Value> current();
 }

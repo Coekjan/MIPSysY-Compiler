@@ -11,6 +11,10 @@ public abstract class LinkedNode<T extends LinkedNode<T>> {
         return node;
     }
 
+    public T getPrev() {
+        return prev;
+    }
+
     public T getNext() {
         return next;
     }
