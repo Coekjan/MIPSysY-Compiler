@@ -351,7 +351,6 @@ public class Translator {
         Optional<Reg> op = t.scheduler.allocReg(varName, h);
         while (!op.isPresent()) {
             final Pair<Value, Reg> store = t.scheduler.overflow(h);
-            final Address address = t.addressMap.get(store.first);
             if (store.first instanceof WordValue || Character.isDigit(store.first.symbol.charAt(0))) {
                 p = p.link(new MIPSCode.StoreCode(store.second, t.addressMap.get(store.first)));
             }
@@ -360,7 +359,8 @@ public class Translator {
         if (load) {
             final Address address = t.addressMap.get(varName);
             if (address instanceof RelativeAddress || varName instanceof WordValue) {
-                if (varName instanceof AddrValue && !left && !t.params.contains(varName)) {
+                if (varName instanceof AddrValue && !left && !t.params.contains(varName) &&
+                        !Character.isDigit(varName.symbol.charAt(0))) {
                     p = p.link(new MIPSCode.LoadAddressCode(op.get(), address));
                 } else {
                     p = p.link(new MIPSCode.LoadCode(op.get(), address));
