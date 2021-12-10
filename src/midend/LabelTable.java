@@ -28,4 +28,22 @@ public class LabelTable /* yielded by ast */ {
         }
         instMap.get(targetInstruction).add(0, label);
     }
+
+    public void removeLabel(String label) {
+        final IntermediateCode code = labelsMap.get(label);
+        if (code != null) {
+            labelsMap.remove(label);
+            instMap.get(code).remove(label);
+        }
+    }
+
+    public void minifyLabels(Collection<String> usedLabels) {
+        final Set<String> unusedLabels = new HashSet<>();
+        labelsMap.keySet().forEach(l -> {
+            if (!usedLabels.contains(l)) {
+                unusedLabels.add(l);
+            }
+        });
+        unusedLabels.forEach(this::removeLabel);
+    }
 }

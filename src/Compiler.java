@@ -184,6 +184,55 @@ public class Compiler {
     }
 
     public static void main(String[] args) throws IOException {
-        mipsTest("testfile.txt", "mips.txt");
+        final String in = "testfile.txt";
+        final String out = "mips.txt";
+        try {
+            final TokenSupporter supporter = new TokenSupporter(Tokenizer.lex(SimpleIO.input(in)));
+            final ParserUnit compUnit = ParserController.CompUnit.parse(supporter);
+            final GlobalNode globalNode = SyntaxTreeBuilder.fetch(compUnit);
+            final SymbolTable initSymbols = new SymbolTable(Collections.emptyMap(), new HashMap<>());
+            globalNode.check(initSymbols, false);
+            final List<Pair<Integer, SysYException.Code>> errors =
+                    new ArrayList<Pair<Integer, SysYException.Code>>(Tokenizer.errors) {{
+                        addAll(ParserController.errors);
+                        addAll(SyntaxNode.errors);
+                    }};
+            if (!errors.isEmpty()) {
+                SimpleIO.output(out, errors, a -> a.stream().distinct().sorted(Comparator.comparing(o -> o.first))
+                        .map(p -> p.first + " " + p.second).reduce((x, y) -> x + "\n" + y).orElse(""));
+                return;
+            }
+            final GlobalNode globalNodeWithoutConstExp = (GlobalNode) globalNode.simplify(initSymbols).second;
+            final LabelTable lt = new LabelTable();
+            final Pair<IntermediateCode, IntermediateCode> global = new Optimizer.RemoveRedundantLabel()
+                    .apply(lt, new Optimizer.RemoveNop()
+                            .apply(lt, globalNodeWithoutConstExp.iCode(lt, new SymbolTable(Collections.emptyMap(),
+                                    new HashMap<>()), null, null, 0).second));
+            final IntermediateCode head = global.first;
+            IntermediateCode p = head;
+            final StringJoiner make = new StringJoiner("\n");
+            while (p != null) {
+                final Optional<List<String>> labels = lt.find(p);
+                if (labels.isPresent()) {
+                    for (String s : labels.get()) {
+                        make.add(s + ":");
+                    }
+                }
+                if (!(p instanceof Nop)) {
+                    make.add(p.toString());
+                }
+                p = p.getNext();
+            }
+            SimpleIO.output("ir.txt", make, StringJoiner::toString);
+            final Translator translator = new Translator(head, new LoopScheduler(), lt);
+            final String s = translator.translate();
+            SimpleIO.output(out, s, l -> l);
+        } catch (SysYException e) {
+            System.out.println(e.stringify());
+            System.exit(1);
+        } catch (ParserController.ParseError e) {
+            System.err.println("Expect " + e.type);
+            System.exit(1);
+        }
     }
 }
