@@ -37,6 +37,11 @@ public class BasicBlockOptimizer implements Optimizer.BlockOptimizer {
                 p = p.getNext();
             }
         }
+        final BasicBlock block = new BasicBlock(start, p);
+        final Optional<List<String>> startLabels = lt.find(start);
+        startLabels.orElseGet(Collections::emptyList).forEach(l -> flowGraph.addBlockLabel(l, block));
+        tail.link(block);
+        tail = tail.getNext();
         BasicBlock q = head;
         do {
             q = q.getNext();
@@ -226,7 +231,7 @@ public class BasicBlockOptimizer implements Optimizer.BlockOptimizer {
         BasicBlock p = basicBlock.first;
         while (p != null) {
             IntermediateCode code = p.getHead();
-            while (code != null) {
+            while (true) {
                 if (code instanceof Usage) {
                     final List<Value> use = ((Usage<?>) code).getUse();
                     final List<Value> aft = new ArrayList<>(use);
@@ -243,7 +248,10 @@ public class BasicBlockOptimizer implements Optimizer.BlockOptimizer {
                     }
                     final IntermediateCode aftCode = ((Usage<?>) code).replaceUse(aft);
                     code.replaceWith(aftCode);
+                    if (code == p.getHead()) p.setHead(aftCode);
+                    if (code == p.getTail()) p.setTail(aftCode);
                     lt.reassignCode(code, aftCode);
+                    code = aftCode;
                 }
                 if (code == p.getTail()) break;
                 code = code.getNext();
@@ -255,11 +263,18 @@ public class BasicBlockOptimizer implements Optimizer.BlockOptimizer {
 
     private void deleteUnusedCode(Pair<BasicBlock, BasicBlock> basicBlock) {
         BasicBlock p = basicBlock.first;
-        while (true) {
+        while (p != null) {
             IntermediateCode code = p.getHead();
-            while (true) {
-
-                if (code == p.getTail()) break;
+            while (code != p.getTail()) {
+                if (code instanceof Definite) {
+                    final Value defValue = ((Definite) code).getDef();
+                    if (!defValue.symbol.endsWith("%1") && activeUse.values().stream()
+                            .flatMap(Collection::stream)
+                            .distinct().noneMatch(v -> v.equals(defValue))) {
+                        code.remove();
+                        // System.out.println(">>> REMOVE : " + code);
+                    }
+                }
                 code = code.getNext();
             }
             if (p == basicBlock.second) break;
@@ -274,6 +289,7 @@ public class BasicBlockOptimizer implements Optimizer.BlockOptimizer {
         activeDefUse(basicBlock);
         activeInOut(flowGraph, basicBlock);
         propagateConst(lt, basicBlock);
+        deleteUnusedCode(basicBlock);
         // TODO: delete dead-code, allocate registers
         return basicBlock;
     }

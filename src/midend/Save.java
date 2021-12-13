@@ -1,6 +1,6 @@
 package midend;
 
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 
 public class Save extends IntermediateCode implements Usage<Save> {
@@ -25,11 +25,11 @@ public class Save extends IntermediateCode implements Usage<Save> {
 
     @Override
     public List<Value> getUse() {
-        return Collections.singletonList(right);
+        return Arrays.asList(base, right);
     }
 
     @Override
     public Save replaceUse(List<Value> uses) {
-        return new Save(base, uses.get(0));
+        return new Save((AddrValue) uses.get(0), uses.get(1));
     }
 }

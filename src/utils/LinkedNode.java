@@ -26,11 +26,12 @@ public abstract class LinkedNode<T extends LinkedNode<T>> {
         while (p.next != null) {
             p = p.next;
         }
-        p.link(next);
+        if (next != null) p.link(next);
         return p;
     }
 
     public void remove() {
-        prev.link(next);
+        if (next != null) prev.link(next);
+        else prev.next = null;
     }
 }

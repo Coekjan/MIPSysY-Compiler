@@ -9,7 +9,7 @@ public class BasicBlock extends LinkedNode<BasicBlock> {
         return new BasicBlock(nop, nop);
     }
 
-    private final Pair<IntermediateCode, IntermediateCode> pair;
+    private Pair<IntermediateCode, IntermediateCode> pair;
 
     public BasicBlock(Pair<IntermediateCode, IntermediateCode> iCodePair) {
         pair = iCodePair;
@@ -44,5 +44,13 @@ public class BasicBlock extends LinkedNode<BasicBlock> {
         prev.getTail().link(node.getHead());
         last.getTail().link(next.getHead());
         return last;
+    }
+
+    public void setHead(IntermediateCode code) {
+        pair = Pair.of(code, pair.second);
+    }
+
+    public void setTail(IntermediateCode code) {
+        pair = Pair.of(pair.first, code);
     }
 }

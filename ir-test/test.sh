@@ -8,8 +8,8 @@ do
   cp ../testcases/"$path"/testfile"$n".txt ./testfile.txt
   cp ../testcases/"$path"/input"$n".txt ./input.txt
   cp ../testcases/"$path"/output"$n".txt ./std.txt
-  echo "> RUNNING testfile$n.txt"
-  java -jar ../out/artifacts/mipsysy_compiler_jar/mipsysy-compiler.jar -ea < ./input.txt > ./out.txt
+  echo "> RUNNING $1 | testfile$n.txt"
+  java -jar ../out/artifacts/mipsysy_compiler_jar/mipsysy-compiler.jar -ea --ir < ./input.txt > ./out.txt
   if ! diff ./std.txt ./out.txt --suppress-common-lines --side-by-side --ignore-all-space --ignore-blank-lines
   then
     echo WRONG ANSWER!
@@ -17,4 +17,4 @@ do
   fi
 done
 
-echo ACCEPTED!
+echo "$1" ACCEPTED!

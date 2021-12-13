@@ -195,37 +195,51 @@ public class Compiler {
             IntermediateCode p = blk.first;
             IntermediateCode start;
             IntermediateCode end = null;
+            final IntermediateCode head = new Nop();
+            IntermediateCode tail = head;
+            while (!(p instanceof FuncEntry)) {
+                tail.link(p);
+                tail = p;
+                p = p.getNext();
+            }
             while (p != null) {
-                if (p instanceof FuncEntry) {
-                    p = p.getNext();
-                    while (p instanceof ParameterFetch) {
-                        p = p.getNext();
-                    }
-                    start = p;
-                    while (p != null && !(p instanceof FuncEntry)) {
-                        end = p;
-                        p = p.getNext();
-                    }
-                    assert end != null;
-                    new BasicBlockOptimizer().apply(lt, Pair.of(start, end));
-                } else {
+                tail.link(p);
+                tail = tail.getNext();
+                p = p.getNext();
+                while (p instanceof ParameterFetch) {
+                    tail.link(p);
+                    tail = tail.getNext();
                     p = p.getNext();
                 }
+                start = p;
+                while (p != null && !(p instanceof FuncEntry)) {
+                    end = p;
+                    p = p.getNext();
+                }
+                assert end != null;
+                final Pair<IntermediateCode, IntermediateCode> opt =
+                        new BasicBlockOptimizer().apply(lt, Pair.of(start, end));
+                tail.link(opt.first);
+                tail = opt.second;
             }
-            return blk;
+            return head == tail ? Pair.of(head, head) : Pair.of(head.getNext(), tail);
         } else {
             return block;
         }
     }
 
     public static void main(String[] args) throws IOException {
+        boolean ir = false;
         if (args.length > 0) {
             for (String arg : args) {
                 if (arg.equals("--O0")) {
                     opt = false;
+                } else if (arg.equals("--ir")) {
+                    ir = true;
                 }
             }
         }
-        mipsTest("testfile.txt", "mips.txt");
+        if (ir) irTest("testfile.txt", "output.txt");
+        else mipsTest("testfile.txt", "mips.txt");
     }
 }

@@ -64,7 +64,14 @@ public class IntermediateVirtualMachine {
         if (varStack.get(0).containsKey(name)) {
             return varStack.get(0).get(name);
         }
-        return varStack.get(varStack.size() - 1).get(name);
+        try {
+            return varStack.get(varStack.size() - 1).get(name);
+        } catch (NullPointerException e) {
+            System.out.println("Name NOT FOUND : " + name);
+            e.printStackTrace();
+            System.exit(1);
+            return 0;
+        }
     }
 
     void updateVar(Value name, int val) {
