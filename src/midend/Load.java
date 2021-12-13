@@ -2,7 +2,10 @@ package midend;
 
 import utils.Pair;
 
-public class Load extends IntermediateCode implements IntroSpace {
+import java.util.Collections;
+import java.util.List;
+
+public class Load extends IntermediateCode implements IntroSpace, Definite, Usage<Load> {
     public final boolean temporary;
     public final Value left;
     public final AddrValue base;
@@ -27,5 +30,20 @@ public class Load extends IntermediateCode implements IntroSpace {
     @Override
     public Pair<Value, Integer> getSize() {
         return Pair.of(left, temporary ? 1 : 0);
+    }
+
+    @Override
+    public Value getDef() {
+        return left;
+    }
+
+    @Override
+    public List<Value> getUse() {
+        return Collections.singletonList(base);
+    }
+
+    @Override
+    public Load replaceUse(List<Value> uses) {
+        return new Load(temporary, left, (AddrValue) uses.get(0));
     }
 }

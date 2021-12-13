@@ -25,6 +25,7 @@ public class Reg extends Element {
     public static final Reg S5 = new Reg("s5");
     public static final Reg S6 = new Reg("s6");
     public static final Reg S7 = new Reg("s7");
+    public static final Reg CT = new Reg("fp"); // Compiler Temp
 
     public final String name;
 

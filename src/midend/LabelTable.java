@@ -29,6 +29,13 @@ public class LabelTable /* yielded by ast */ {
         instMap.get(targetInstruction).add(0, label);
     }
 
+    public void reassignCode(IntermediateCode bfr, IntermediateCode aft) {
+        find(bfr).ifPresent(l -> {
+            instMap.put(aft, new LinkedList<>(l));
+            l.forEach(s -> labelsMap.put(s, aft));
+        });
+    }
+
     public void removeLabel(String label) {
         final IntermediateCode code = labelsMap.get(label);
         if (code != null) {

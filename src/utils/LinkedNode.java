@@ -18,4 +18,19 @@ public abstract class LinkedNode<T extends LinkedNode<T>> {
     public T getNext() {
         return next;
     }
+
+    // replace with a list
+    public T replaceWith(T node /* head node of a list */) {
+        prev.link(node);
+        T p = node;
+        while (p.next != null) {
+            p = p.next;
+        }
+        p.link(next);
+        return p;
+    }
+
+    public void remove() {
+        prev.link(next);
+    }
 }

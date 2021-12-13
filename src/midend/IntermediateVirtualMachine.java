@@ -50,6 +50,7 @@ public class IntermediateVirtualMachine {
         arrStack.add(new HashMap<>());
         while (!(p instanceof Exit)) {
             if (exitCond.test(p)) break;
+            // System.out.println(p);
             p = p.execute(this, lt);
         }
     }

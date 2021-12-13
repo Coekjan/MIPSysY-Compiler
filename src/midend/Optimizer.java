@@ -16,7 +16,7 @@ public interface Optimizer {
             final IntermediateCode head = new Nop();
             IntermediateCode tail = head;
             IntermediateCode p = block.first;
-            while (p != block.second) {
+            while (true) {
                 if (!(p instanceof Nop)) {
                     tail.link(p);
                     tail = tail.getNext();
@@ -28,6 +28,7 @@ public interface Optimizer {
                         }
                     }
                 }
+                if (p == block.second) break;
                 p = p.getNext();
             }
             return Pair.of(tail == head ? head : head.getNext(), tail);
@@ -42,7 +43,7 @@ public interface Optimizer {
             final IntermediateCode head = new Nop();
             IntermediateCode tail = head;
             IntermediateCode p = block.first;
-            while (p != block.second) {
+            while (true) {
                 if (p instanceof Jump) {
                     final String realTarget = getLeafLabel(lt, ((Jump) p).label);
                     usedLabels.add(realTarget);
@@ -51,10 +52,14 @@ public interface Optimizer {
                     final String realTarget = getLeafLabel(lt, ((Branch) p).label);
                     usedLabels.add(realTarget);
                     tail.link(new Branch(((Branch) p).condition, realTarget));
+                } else if (p instanceof FuncEntry) {
+                    lt.find(p).ifPresent(usedLabels::addAll);
+                    tail.link(p);
                 } else {
                     tail.link(p);
                 }
                 tail = tail.getNext();
+                if (p == block.second) break;
                 p = p.getNext();
             }
             lt.minifyLabels(usedLabels);
@@ -64,6 +69,37 @@ public interface Optimizer {
         private String getLeafLabel(LabelTable lt, String label) {
             final IntermediateCode p = lt.find(label);
             return p instanceof Jump ? getLeafLabel(lt, ((Jump) p).label) : label;
+        }
+    }
+
+    class SimplifyConst implements Optimizer {
+        @Override
+        public Pair<IntermediateCode, IntermediateCode> apply(LabelTable lt, Pair<IntermediateCode, IntermediateCode> block) {
+            final IntermediateCode head = new Nop();
+            IntermediateCode tail = head;
+            IntermediateCode p = block.first;
+            while (true) {
+                if (p instanceof ProbablyConst) {
+                    tail.link(((ProbablyConst) p).simplify());
+                } else {
+                    tail.link(p);
+                }
+                tail = tail.getNext();
+                if (p == block.second) break;
+                p = p.getNext();
+            }
+            return Pair.of(tail == head ? head : head.getNext(), tail);
+        }
+    }
+
+    interface BlockOptimizer extends Optimizer {
+        Pair<BasicBlock, BasicBlock> optimize(LabelTable lt, FlowGraph flowGraph, Pair<BasicBlock, BasicBlock> basicBlock);
+
+        @Override
+        default Pair<IntermediateCode, IntermediateCode> apply(LabelTable lt, Pair<IntermediateCode, IntermediateCode> block) {
+            final Pair<FlowGraph, Pair<BasicBlock, BasicBlock>> extractResult = BasicBlockOptimizer.extract(lt, block);
+            final Pair<BasicBlock, BasicBlock> optimized = optimize(lt, extractResult.first, extractResult.second);
+            return Pair.of(optimized.first.getHead(), optimized.second.getTail());
         }
     }
 }

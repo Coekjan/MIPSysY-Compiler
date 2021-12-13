@@ -2,7 +2,10 @@ package midend;
 
 import utils.Pair;
 
-public class Move extends IntermediateCode implements IntroSpace {
+import java.util.Collections;
+import java.util.List;
+
+public class Move extends IntermediateCode implements IntroSpace, Definite, Usage<Move> {
     public final boolean temporary;
     public final Value left;
     public final Value right;
@@ -28,5 +31,20 @@ public class Move extends IntermediateCode implements IntroSpace {
     @Override
     public Pair<Value, Integer> getSize() {
         return Pair.of(left, temporary ? 1 : 0);
+    }
+
+    @Override
+    public Value getDef() {
+        return left;
+    }
+
+    @Override
+    public List<Value> getUse() {
+        return Collections.singletonList(right);
+    }
+
+    @Override
+    public Move replaceUse(List<Value> uses) {
+        return new Move(temporary, left, uses.get(0));
     }
 }
