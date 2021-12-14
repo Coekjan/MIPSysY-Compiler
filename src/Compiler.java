@@ -11,7 +11,7 @@ import java.util.*;
 
 public class Compiler {
     public static boolean opt = true;
-    public static int constTimes = 3;
+    public static int constTimes = 4;
 
     public static void tokenizerTest(String in, String out) throws IOException {
         try {
@@ -219,7 +219,6 @@ public class Compiler {
                 assert end != null;
                 Pair<IntermediateCode, IntermediateCode> opt = Pair.of(start, end);
                 for (int i = 0; i < constTimes; ++i) {
-                    opt = new BasicBlockOptimizer().apply(lt, opt);
                     opt = new BasicBlockOptimizer().apply(lt, opt);
                 }
                 tail.link(opt.first);

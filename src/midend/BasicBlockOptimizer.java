@@ -225,7 +225,8 @@ public class BasicBlockOptimizer implements Optimizer.BlockOptimizer {
                         for (IntermediateCode c : reachInOfICode.get(code)) {
                             if (c instanceof Assignment) {
                                 final Assignment assignment = (Assignment) c;
-                                if (assignment.right().size() == 1 && assignment.right().get(0).equals(use.get(i))) {
+                                if (assignment.right().size() == 1 && assignment.left() instanceof WordValue &&
+                                        assignment.left().equals(use.get(i))) {
                                     reach.add(assignment);
                                 }
                             }
