@@ -261,20 +261,22 @@ public class BasicBlockOptimizer implements Optimizer.BlockOptimizer {
         }
     }
 
-    private void deleteUnusedCode(Pair<BasicBlock, BasicBlock> basicBlock) {
+    private void deleteUnusedCode(LabelTable lt, Pair<BasicBlock, BasicBlock> basicBlock) {
         BasicBlock p = basicBlock.first;
         while (p != null) {
             IntermediateCode code = p.getHead();
-            while (code != p.getTail()) {
+            while (true) {
                 if (code instanceof Definite) {
                     final Value defValue = ((Definite) code).getDef();
-                    if (!defValue.symbol.endsWith("%1") && activeUse.values().stream()
+                    if (!defValue.symbol.endsWith("%1") /* global */ && activeUse.values().stream()
                             .flatMap(Collection::stream)
                             .distinct().noneMatch(v -> v.equals(defValue))) {
                         code.remove();
+                        lt.reassignCode(code, code.getNext());
                         // System.out.println(">>> REMOVE : " + code);
                     }
                 }
+                if (code == p.getTail()) break;
                 code = code.getNext();
             }
             if (p == basicBlock.second) break;
@@ -289,7 +291,7 @@ public class BasicBlockOptimizer implements Optimizer.BlockOptimizer {
         activeDefUse(basicBlock);
         activeInOut(flowGraph, basicBlock);
         propagateConst(lt, basicBlock);
-        deleteUnusedCode(basicBlock);
+        deleteUnusedCode(lt, basicBlock);
         // TODO: delete dead-code, allocate registers
         return basicBlock;
     }
