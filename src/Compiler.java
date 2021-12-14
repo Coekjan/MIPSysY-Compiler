@@ -6,12 +6,12 @@ import midend.*;
 import utils.Pair;
 import utils.SimpleIO;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
 
 public class Compiler {
     public static boolean opt = true;
+    public static int constTimes = 3;
 
     public static void tokenizerTest(String in, String out) throws IOException {
         try {
@@ -217,8 +217,11 @@ public class Compiler {
                     p = p.getNext();
                 }
                 assert end != null;
-                final Pair<IntermediateCode, IntermediateCode> opt =
-                        new BasicBlockOptimizer().apply(lt, Pair.of(start, end));
+                Pair<IntermediateCode, IntermediateCode> opt = Pair.of(start, end);
+                for (int i = 0; i < constTimes; ++i) {
+                    opt = new BasicBlockOptimizer().apply(lt, opt);
+                    opt = new BasicBlockOptimizer().apply(lt, opt);
+                }
                 tail.link(opt.first);
                 tail = opt.second;
             }
@@ -236,6 +239,8 @@ public class Compiler {
                     opt = false;
                 } else if (arg.equals("--ir")) {
                     ir = true;
+                } else if (arg.equals("--c1")) {
+                    constTimes = 1;
                 }
             }
         }

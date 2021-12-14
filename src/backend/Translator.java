@@ -79,7 +79,12 @@ public class Translator {
                             final Pair<MIPSCode, Element> op = getRegForSymOrImm(t, code.condition, p, new LinkedList<>());
                             p = op.first;
                             assert code.label.startsWith("@");
-                            p = p.link(new MIPSCode.BranchNotEq((Reg) op.second, Reg._0, code.label.substring(1)));
+                            if (op.second instanceof Imm) {
+                                p = p.link(new MIPSCode.LoadImmCode(Reg.CT, (Imm) op.second));
+                                p = p.link(new MIPSCode.BranchNotEq(Reg.CT, Reg._0, code.label.substring(1)));
+                            } else {
+                                p = p.link(new MIPSCode.BranchNotEq((Reg) op.second, Reg._0, code.label.substring(1)));
+                            }
                             return Pair.of(Pair.of(f, p), c.getNext());
                         });
                         put(CallFunction.class, (t, c) -> {

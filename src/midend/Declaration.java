@@ -6,7 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.StringJoiner;
 
-public class Declaration extends IntermediateCode implements IntroSpace, Definite, Usage<Declaration> {
+public class Declaration extends IntermediateCode implements Assignment, IntroSpace, Definite, Usage<Declaration> {
     public final boolean global;
     public final boolean modifiable;
     public final Value symbol;
@@ -65,5 +65,15 @@ public class Declaration extends IntermediateCode implements IntroSpace, Definit
     @Override
     public Declaration replaceUse(List<Value> uses) {
         return new Declaration(global, modifiable, symbol, size, uses);
+    }
+
+    @Override
+    public Value left() {
+        return symbol;
+    }
+
+    @Override
+    public List<Value> right() {
+        return initValues;
     }
 }

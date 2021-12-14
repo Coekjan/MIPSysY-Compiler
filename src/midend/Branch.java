@@ -3,7 +3,7 @@ package midend;
 import java.util.Collections;
 import java.util.List;
 
-public class Branch extends IntermediateCode implements Usage<Branch> {
+public class Branch extends IntermediateCode implements ProbablyConst, Usage<Branch> {
     public final Value condition;
     public final String label;
 
@@ -34,5 +34,17 @@ public class Branch extends IntermediateCode implements Usage<Branch> {
     @Override
     public Branch replaceUse(List<Value> uses) {
         return new Branch(uses.get(0), label);
+    }
+
+    @Override
+    public IntermediateCode simplify() {
+        if (condition instanceof ImmValue) {
+            if (((ImmValue) condition).value != 0) {
+                return new Jump(label);
+            } else {
+                return new Nop();
+            }
+        }
+        return new Branch(condition, label);
     }
 }

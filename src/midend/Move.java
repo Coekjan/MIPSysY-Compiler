@@ -5,7 +5,7 @@ import utils.Pair;
 import java.util.Collections;
 import java.util.List;
 
-public class Move extends IntermediateCode implements IntroSpace, Definite, Usage<Move> {
+public class Move extends IntermediateCode implements Assignment, IntroSpace, Definite, Usage<Move> {
     public final boolean temporary;
     public final Value left;
     public final Value right;
@@ -46,5 +46,15 @@ public class Move extends IntermediateCode implements IntroSpace, Definite, Usag
     @Override
     public Move replaceUse(List<Value> uses) {
         return new Move(temporary, left, uses.get(0));
+    }
+
+    @Override
+    public Value left() {
+        return left;
+    }
+
+    @Override
+    public List<Value> right() {
+        return Collections.singletonList(right);
     }
 }

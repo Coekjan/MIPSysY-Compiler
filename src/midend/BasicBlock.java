@@ -31,21 +31,6 @@ public class BasicBlock extends LinkedNode<BasicBlock> {
         return pair;
     }
 
-    @Override
-    public BasicBlock link(BasicBlock node) {
-        final BasicBlock ret = super.link(node);
-        getTail().link(node.getHead());
-        return ret;
-    }
-
-    @Override
-    public BasicBlock replaceWith(BasicBlock node) {
-        final BasicBlock last = super.replaceWith(node);
-        prev.getTail().link(node.getHead());
-        last.getTail().link(next.getHead());
-        return last;
-    }
-
     public void setHead(IntermediateCode code) {
         pair = Pair.of(code, pair.second);
     }
