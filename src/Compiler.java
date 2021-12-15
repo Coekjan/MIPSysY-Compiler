@@ -229,12 +229,16 @@ public class Compiler {
         boolean ir = false;
         if (args.length > 0) {
             for (String arg : args) {
-                if (arg.equals("--O0")) {
-                    opt = false;
-                } else if (arg.equals("--ir")) {
-                    ir = true;
-                } else if (arg.equals("--c1")) {
-                    constTimes = 1;
+                switch (arg) {
+                    case "--O0":
+                        opt = false;
+                        break;
+                    case "--ir":
+                        ir = true;
+                        break;
+                    case "--c1":
+                        constTimes = 1;
+                        break;
                 }
             }
         }
