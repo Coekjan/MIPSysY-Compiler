@@ -36,7 +36,12 @@ public class Translator {
                                         return Pair.of(Pair.of(f, p), c.getNext());
                                     } else {
                                         p = p.link(new MIPSCode.BinaryRegImmCode(MIPSCode.BinaryRegImmCode.Op.SLL,
-                                                (Reg) op2.second, (Reg) op2.second, new Imm(2)));
+                                                Reg.CT, (Reg) op2.second, new Imm(2)));
+                                        final Pair<MIPSCode, MIPSCode> tr =
+                                                fromBinaryOperation(code, left.second, op1.second, Reg.CT);
+                                        p.link(tr.first);
+                                        p = tr.second;
+                                        return Pair.of(Pair.of(f, p), c.getNext());
                                     }
                                 } else {
                                     if (op1.second instanceof Imm) {
@@ -47,7 +52,12 @@ public class Translator {
                                         return Pair.of(Pair.of(f, p), c.getNext());
                                     } else {
                                         p = p.link(new MIPSCode.BinaryRegImmCode(MIPSCode.BinaryRegImmCode.Op.SLL,
-                                                (Reg) op1.second, (Reg) op1.second, new Imm(2)));
+                                                Reg.CT, (Reg) op1.second, new Imm(2)));
+                                        final Pair<MIPSCode, MIPSCode> tr =
+                                                fromBinaryOperation(code, left.second, Reg.CT, op2.second);
+                                        p.link(tr.first);
+                                        p = tr.second;
+                                        return Pair.of(Pair.of(f, p), c.getNext());
                                     }
                                 }
                             }

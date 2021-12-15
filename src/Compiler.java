@@ -206,11 +206,6 @@ public class Compiler {
                 tail.link(p);
                 tail = tail.getNext();
                 p = p.getNext();
-                while (p instanceof ParameterFetch) {
-                    tail.link(p);
-                    tail = tail.getNext();
-                    p = p.getNext();
-                }
                 start = p;
                 while (p != null && !(p instanceof FuncEntry)) {
                     end = p;

@@ -40,6 +40,17 @@ public class BasicBlockOptimizer implements Optimizer.BlockOptimizer {
         tail.link(block);
         tail = tail.getNext();
         BasicBlock q = head;
+        while (true) {
+            IntermediateCode code = q.getHead();
+            while (true) {
+                flowGraph.put(code, q);
+                if (code == q.getTail()) break;
+                code = code.getNext();
+            }
+            if (q == tail) break;
+            q = q.getNext();
+        }
+        q = head;
         do {
             q = q.getNext();
             final IntermediateCode lastICode = q.getTail();
@@ -67,6 +78,37 @@ public class BasicBlockOptimizer implements Optimizer.BlockOptimizer {
     private final Map<BasicBlock, Set<Value>> activeDef = new HashMap<>();
     private final Map<BasicBlock, Set<Value>> activeIn = new HashMap<>();
     private final Map<BasicBlock, Set<Value>> activeOut = new HashMap<>();
+
+    private boolean pathFind(FlowGraph flowGraph, BasicBlock curBlock,
+                             IntermediateCode curCode, IntermediateCode tarCode, Value target) {
+        final Set<BasicBlock> visited = new HashSet<>();
+        return pathFinder(flowGraph, curBlock, curCode, tarCode, target, visited);
+    }
+
+    private boolean pathFinder(FlowGraph flowGraph, BasicBlock curBlock,
+                               IntermediateCode curCode, IntermediateCode tarCode, Value targetValue,
+                               Set<BasicBlock> visited) {
+        IntermediateCode p = curCode;
+        visited.add(curBlock);
+        while (p != tarCode) {
+            if (p instanceof Assignment && ((Assignment) p).left().equals(targetValue)) {
+                return true;
+            }
+            if (p == curBlock.getTail()) break;
+            p = p.getNext();
+        }
+        if (p == tarCode) {
+            return false;
+        }
+        for (BasicBlock b : flowGraph.nextOf(curBlock)) {
+            if (!visited.contains(b)) {
+                if (pathFinder(flowGraph, b, b.getHead(), tarCode, targetValue, visited)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 
     private void reachInOut(FlowGraph flowGraph, Pair<BasicBlock, BasicBlock> basicBlock) {
         final Map<BasicBlock, Set<IntermediateCode>> reachGenOfBlock = new HashMap<>();
@@ -212,7 +254,7 @@ public class BasicBlockOptimizer implements Optimizer.BlockOptimizer {
         } while (diff);
     }
 
-    private void propagateConst(LabelTable lt, Pair<BasicBlock, BasicBlock> basicBlock) {
+    private void propagateValue(FlowGraph flowGraph, LabelTable lt, Pair<BasicBlock, BasicBlock> basicBlock) {
         BasicBlock p = basicBlock.first;
         while (p != null) {
             IntermediateCode code = p.getHead();
@@ -231,8 +273,16 @@ public class BasicBlockOptimizer implements Optimizer.BlockOptimizer {
                                 }
                             }
                         }
-                        if (reach.size() == 1 && reach.get(0).right().get(0) instanceof ImmValue) {
-                            aft.set(i, reach.get(0).right().get(0));
+                        if (reach.size() == 1) {
+                            final Value value = reach.get(0).right().get(0);
+                            if (value instanceof ImmValue) { // const
+                                aft.set(i, value);
+                            } else if (!use.get(0).symbol.endsWith("%1") && !value.symbol.equals(Return.RET_SYM)) {
+                                final IntermediateCode curCode = (IntermediateCode) reach.get(0);
+                                if (!pathFind(flowGraph, flowGraph.getBlock(curCode), curCode, code, value)) { // copy value
+                                    aft.set(i, value);
+                                }
+                            }
                         }
                     }
                     final IntermediateCode aftCode = ((Usage<?>) code).replaceUse(aft);
@@ -284,7 +334,7 @@ public class BasicBlockOptimizer implements Optimizer.BlockOptimizer {
         activeDefUse(basicBlock);
         reachInOut(flowGraph, basicBlock);
         activeInOut(flowGraph, basicBlock);
-        propagateConst(lt, basicBlock);
+        propagateValue(flowGraph, lt, basicBlock);
         deleteUnusedCode(lt, basicBlock);
         // TODO: allocate registers
         final Pair<IntermediateCode, IntermediateCode> s =

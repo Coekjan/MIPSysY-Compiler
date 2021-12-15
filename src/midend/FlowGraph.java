@@ -6,6 +6,7 @@ public class FlowGraph {
     private final Map<BasicBlock, List<BasicBlock>> blockNext = new HashMap<>();
     private final Map<BasicBlock, List<BasicBlock>> blockPrev = new HashMap<>();
     private final Map<String, BasicBlock> blockLabels = new HashMap<>();
+    private final Map<IntermediateCode, BasicBlock> codeToBlock = new HashMap<>();
 
     public void link(BasicBlock from, BasicBlock to) {
         if (!blockNext.containsKey(from)) {
@@ -16,6 +17,14 @@ public class FlowGraph {
         }
         blockNext.get(from).add(to);
         blockPrev.get(to).add(from);
+    }
+
+    public void put(IntermediateCode code, BasicBlock block) {
+        codeToBlock.put(code, block);
+    }
+
+    public BasicBlock getBlock(IntermediateCode code) {
+        return codeToBlock.get(code);
     }
 
     public List<BasicBlock> nextOf(BasicBlock block) {
