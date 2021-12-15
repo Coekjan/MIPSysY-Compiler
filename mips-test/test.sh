@@ -8,8 +8,9 @@ do
   cp ../testcases/"$path"/testfile"$n".txt ./testfile.txt
   cp ../testcases/"$path"/input"$n".txt ./input.txt
   cp ../testcases/"$path"/output"$n".txt ./std.txt
-  echo "> RUNNING $1 | testfile$n.txt"
+  echo "> Compiling $1 | testfile$n.txt"
   java -jar ../out/artifacts/mipsysy_compiler_jar/mipsysy-compiler.jar -ea
+  echo "> Compilation finished! Running testfile$n.txt"
   java -jar ../Mars-Compile-2021.jar ./mips.txt nc mc Default < ./input.txt > ./out.txt
   if ! diff ./std.txt ./out.txt --suppress-common-lines --side-by-side --ignore-all-space --ignore-blank-lines
   then

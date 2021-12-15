@@ -66,26 +66,22 @@ public class BasicBlockOptimizer implements Optimizer.BlockOptimizer {
         return Pair.of(flowGraph, Pair.of(head == tail ? head : head.getNext(), tail));
     }
 
-    private final Map<IntermediateCode, Set<IntermediateCode>> reachGenOfICode = new HashMap<>();
-    private final Map<IntermediateCode, Set<IntermediateCode>> reachKilOfICode = new HashMap<>();
-    private final Map<IntermediateCode, Set<IntermediateCode>> reachInOfICode = new HashMap<>();
-    private final Map<IntermediateCode, Set<IntermediateCode>> reachOutOfICode = new HashMap<>();
     private final Map<BasicBlock, Set<IntermediateCode>> reachInOfBlock = new HashMap<>();
     private final Map<BasicBlock, Set<IntermediateCode>> reachOutOfBlock = new HashMap<>();
 
-    private final Map<Value, Set<IntermediateCode>> activeDefOfICode = new HashMap<>();
-    private final Map<BasicBlock, Set<Value>> activeUse = new HashMap<>();
-    private final Map<BasicBlock, Set<Value>> activeDef = new HashMap<>();
-    private final Map<BasicBlock, Set<Value>> activeIn = new HashMap<>();
-    private final Map<BasicBlock, Set<Value>> activeOut = new HashMap<>();
+    protected final Map<Value, Set<IntermediateCode>> activeDefOfICode = new HashMap<>();
+    protected final Map<BasicBlock, Set<Value>> activeUse = new HashMap<>();
+    protected final Map<BasicBlock, Set<Value>> activeDef = new HashMap<>();
+    protected final Map<BasicBlock, Set<Value>> activeIn = new HashMap<>();
+    protected final Map<BasicBlock, Set<Value>> activeOut = new HashMap<>();
 
-    private boolean pathFind(FlowGraph flowGraph, BasicBlock curBlock,
-                             IntermediateCode curCode, IntermediateCode tarCode, Value target) {
+    protected boolean pathFind(FlowGraph flowGraph, BasicBlock curBlock,
+                               IntermediateCode curCode, IntermediateCode tarCode, Value target) {
         final Set<BasicBlock> visited = new HashSet<>();
         return pathFinder(flowGraph, curBlock, curCode, tarCode, target, visited);
     }
 
-    private boolean pathFinder(FlowGraph flowGraph, BasicBlock curBlock,
+    protected boolean pathFinder(FlowGraph flowGraph, BasicBlock curBlock,
                                IntermediateCode curCode, IntermediateCode tarCode, Value targetValue,
                                Set<BasicBlock> visited) {
         IntermediateCode p = curCode;
@@ -110,97 +106,54 @@ public class BasicBlockOptimizer implements Optimizer.BlockOptimizer {
         return false;
     }
 
-    private void reachInOut(FlowGraph flowGraph, Pair<BasicBlock, BasicBlock> basicBlock) {
-        final Map<BasicBlock, Set<IntermediateCode>> reachGenOfBlock = new HashMap<>();
-        final Map<BasicBlock, Set<IntermediateCode>> reachKilOfBlock = new HashMap<>();
+    protected void reachInOut(FlowGraph flowGraph, Pair<BasicBlock, BasicBlock> basicBlock) {
+        final Map<BasicBlock, Set<IntermediateCode>> gen = new HashMap<>();
+        final Map<BasicBlock, Set<IntermediateCode>> kil = new HashMap<>();
         BasicBlock p = basicBlock.first;
-        while (p != null) {
-            IntermediateCode code = p.getHead();
+        while (true) {
+            gen.put(p, new HashSet<>());
+            kil.put(p, new HashSet<>());
+            IntermediateCode code = p.getTail();
             while (true) {
                 if (code instanceof Definite) {
-                    reachGenOfICode.put(code, new HashSet<>());
-                    reachKilOfICode.put(code, new HashSet<>(activeDefOfICode.get(((Definite) code).getDef())));
-                    reachGenOfICode.get(code).add(code);
-                } else {
-                    reachGenOfICode.put(code, Collections.emptySet());
-                    reachKilOfICode.put(code, Collections.emptySet());
+                    if (!kil.get(p).contains(code)) {
+                        gen.get(p).add(code);
+                    }
+                    kil.get(p).addAll(activeDefOfICode.get(((Definite) code).getDef()));
                 }
-                if (code == p.getTail()) break;
-                code = code.getNext();
-            }
-            if (p == basicBlock.second) break;
-            p = p.getNext();
-        }
-        p = basicBlock.first;
-        while (p != null) {
-            IntermediateCode code = p.getTail();
-            final Set<IntermediateCode> kilSet = new HashSet<>();
-            final Set<IntermediateCode> genSet = new HashSet<>();
-            while (true) {
-                final Set<IntermediateCode> realGen = new HashSet<>(reachGenOfICode.get(code));
-                realGen.removeAll(kilSet);
-                genSet.addAll(realGen);
-                kilSet.addAll(reachKilOfICode.get(code));
                 if (code == p.getHead()) break;
                 code = code.getPrev();
             }
-            reachGenOfBlock.put(p, genSet);
-            reachKilOfBlock.put(p, kilSet);
             if (p == basicBlock.second) break;
             p = p.getNext();
         }
         boolean diff;
         do {
-            BasicBlock bp = basicBlock.first;
             diff = false;
-            while (bp != null) {
-                final List<BasicBlock> prev = flowGraph.prevOf(bp);
-                if (!reachInOfBlock.containsKey(bp)) reachInOfBlock.put(bp, new HashSet<>());
-                final int iSize = reachInOfBlock.get(bp).size();
-                // in[p] = \cup_{q\in prev[p]} out[q]
-                for (BasicBlock b : prev) {
-                    reachInOfBlock.get(bp).addAll(reachOutOfBlock.getOrDefault(b, Collections.emptySet()));
+            p = basicBlock.first;
+            while (true) {
+                if (!reachInOfBlock.containsKey(p)) {
+                    reachInOfBlock.put(p, new HashSet<>());
                 }
-                if (iSize != reachInOfBlock.get(bp).size()) diff = true;
-
-                if (!reachOutOfBlock.containsKey(bp)) reachOutOfBlock.put(bp, new HashSet<>());
-                final int oSize = reachOutOfBlock.get(bp).size();
-                final Set<IntermediateCode> realIn = new HashSet<>(reachInOfBlock.get(bp));
-                realIn.removeAll(reachKilOfBlock.get(bp));
-                // out[p] = gen[p] \cup (in[p] - kill[p])
-                reachOutOfBlock.get(bp).addAll(reachGenOfBlock.get(bp));
-                reachOutOfBlock.get(bp).addAll(realIn);
-                if (oSize != reachOutOfBlock.get(bp).size()) diff = true;
-                if (bp == basicBlock.second) break;
-                bp = bp.getNext();
-            }
-        } while(diff);
-        BasicBlock bp = basicBlock.first;
-        while (bp != null) {
-            IntermediateCode code = bp.getHead();
-            reachInOfICode.put(code, reachInOfBlock.get(bp));
-            final Set<IntermediateCode> realIn = new HashSet<>(reachInOfICode.get(code));
-            realIn.removeAll(reachKilOfICode.get(code));
-            reachOutOfICode.put(code, new HashSet<>(reachGenOfICode.get(code)));
-            reachOutOfICode.get(code).addAll(realIn);
-            if (code != bp.getTail()) {
-                code = code.getNext();
-                while (code != null) {
-                    reachInOfICode.put(code, reachOutOfICode.get(code.getPrev()));
-                    final Set<IntermediateCode> rin = new HashSet<>(reachInOfICode.get(code));
-                    rin.removeAll(reachKilOfICode.get(code));
-                    reachOutOfICode.put(code, new HashSet<>(reachGenOfICode.get(code)));
-                    reachOutOfICode.get(code).addAll(rin);
-                    if (code == bp.getTail()) break;
-                    code = code.getNext();
+                if (!reachOutOfBlock.containsKey(p)) {
+                    reachOutOfBlock.put(p, new HashSet<>(gen.get(p)));
                 }
+                for (BasicBlock block : flowGraph.prevOf(p)) {
+                    reachInOfBlock.get(p).addAll(reachOutOfBlock.getOrDefault(block, Collections.emptySet()));
+                }
+                for (IntermediateCode code : reachInOfBlock.get(p)) {
+                    if (!kil.get(p).contains(code) && !reachOutOfBlock.get(p).contains(code)) {
+                        diff = true;
+                        reachOutOfBlock.get(p).add(code);
+                    }
+                }
+                if (p == basicBlock.second) break;
+                p = p.getNext();
             }
-            if (bp == basicBlock.second) break;
-            bp = bp.getNext();
-        }
+        } while (diff);
     }
 
-    private void activeDefUse(Pair<BasicBlock, BasicBlock> basicBlock) {
+    protected void activeDefUse(Pair<BasicBlock, BasicBlock> basicBlock) {
         BasicBlock p = basicBlock.first;
         while (p != null) {
             activeDef.put(p, new HashSet<>());
@@ -224,7 +177,7 @@ public class BasicBlockOptimizer implements Optimizer.BlockOptimizer {
         }
     }
 
-    private void activeInOut(FlowGraph flowGraph, Pair<BasicBlock, BasicBlock> basicBlock) {
+    protected void activeInOut(FlowGraph flowGraph, Pair<BasicBlock, BasicBlock> basicBlock) {
         BasicBlock q = basicBlock.first;
         while (q != null) {
             activeIn.put(q, new HashSet<>());
@@ -243,15 +196,32 @@ public class BasicBlockOptimizer implements Optimizer.BlockOptimizer {
                 }
                 if (oSize != activeOut.get(p).size()) diff = true;
                 final int iSize = activeIn.get(p).size();
-                final Set<Value> realOut = new HashSet<>(activeOut.get(p));
-                realOut.removeAll(activeDef.get(p));
+                for (Value v : activeOut.get(p)) {
+                    if (!activeDef.get(p).contains(v)) {
+                        activeIn.get(p).add(v);
+                    }
+                }
                 activeIn.get(p).addAll(activeUse.get(p));
-                activeIn.get(p).addAll(realOut);
                 if (iSize != activeIn.get(p).size()) diff = true;
                 if (p == basicBlock.first) break;
                 p = p.getPrev();
             }
         } while (diff);
+    }
+
+    protected Set<IntermediateCode> reachInOfCode(FlowGraph flowGraph, IntermediateCode code) {
+        final BasicBlock block = flowGraph.getBlock(code);
+        final Set<IntermediateCode> res = reachInOfBlock.get(block);
+        IntermediateCode p = block.getHead();
+        while (p != code) {
+            if (p instanceof Definite) {
+                final Value def = ((Definite) p).getDef();
+                res.removeAll(activeDefOfICode.get(def));
+                res.add(p);
+            }
+            p = p.getNext();
+        }
+        return res;
     }
 
     private void propagateValue(FlowGraph flowGraph, LabelTable lt, Pair<BasicBlock, BasicBlock> basicBlock) {
@@ -264,7 +234,8 @@ public class BasicBlockOptimizer implements Optimizer.BlockOptimizer {
                     final List<Value> aft = new ArrayList<>(use);
                     for (int i = 0; i < use.size(); ++i) {
                         final List<Assignment> reach = new LinkedList<>();
-                        for (IntermediateCode c : reachInOfICode.get(code)) {
+                        Set<IntermediateCode> reachIn = reachInOfCode(flowGraph, code);
+                        for (IntermediateCode c : reachIn) {
                             if (c instanceof Assignment) {
                                 final Assignment assignment = (Assignment) c;
                                 if (assignment.right().size() == 1 && assignment.left() instanceof WordValue &&
@@ -287,6 +258,7 @@ public class BasicBlockOptimizer implements Optimizer.BlockOptimizer {
                     }
                     final IntermediateCode aftCode = ((Usage<?>) code).replaceUse(aft);
                     code.replaceWith(aftCode);
+                    flowGraph.put(aftCode, p);
                     if (code == p.getHead()) p.setHead(aftCode);
                     if (code == p.getTail()) p.setTail(aftCode);
                     lt.reassignCode(code, aftCode);
@@ -329,14 +301,16 @@ public class BasicBlockOptimizer implements Optimizer.BlockOptimizer {
         }
     }
 
-    @Override
-    public Pair<BasicBlock, BasicBlock> optimize(LabelTable lt, FlowGraph flowGraph, Pair<BasicBlock, BasicBlock> basicBlock) {
+    protected void prepare(FlowGraph flowGraph, Pair<BasicBlock, BasicBlock> basicBlock) {
         activeDefUse(basicBlock);
         reachInOut(flowGraph, basicBlock);
-        activeInOut(flowGraph, basicBlock);
+    }
+
+    @Override
+    public Pair<BasicBlock, BasicBlock> optimize(LabelTable lt, FlowGraph flowGraph, Pair<BasicBlock, BasicBlock> basicBlock) {
+        prepare(flowGraph, basicBlock);
         propagateValue(flowGraph, lt, basicBlock);
         deleteUnusedCode(lt, basicBlock);
-        // TODO: allocate registers
         final Pair<IntermediateCode, IntermediateCode> s =
                 new Optimizer.SimplifyConst().apply(lt, Pair.of(basicBlock.first.getHead(), basicBlock.second.getTail()));
         basicBlock.first.setHead(s.first);

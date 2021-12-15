@@ -11,7 +11,8 @@ import java.util.*;
 
 public class Compiler {
     public static boolean opt = true;
-    public static int constTimes = 4;
+    public static boolean ckc = false;
+    public static int constTimes = 6;
 
     public static void tokenizerTest(String in, String out) throws IOException {
         try {
@@ -139,26 +140,15 @@ public class Compiler {
 
     public static void mipsTest(String in, String out) throws IOException {
         try {
-            final TokenSupporter supporter = new TokenSupporter(Tokenizer.lex(SimpleIO.input(in)));
-            final ParserUnit compUnit = ParserController.CompUnit.parse(supporter);
-            final GlobalNode globalNode = SyntaxTreeBuilder.fetch(compUnit);
-            final SymbolTable initSymbols = new SymbolTable(Collections.emptyMap(), new HashMap<>());
-            globalNode.check(initSymbols, false);
-            final List<Pair<Integer, SysYException.Code>> errors =
-                    new ArrayList<Pair<Integer, SysYException.Code>>(Tokenizer.errors) {{
-                        addAll(ParserController.errors);
-                        addAll(SyntaxNode.errors);
-                    }};
-            if (!errors.isEmpty()) {
-                SimpleIO.output(out, errors, a -> a.stream().distinct().sorted(Comparator.comparing(o -> o.first))
-                        .map(p -> p.first + " " + p.second).reduce((x, y) -> x + "\n" + y).orElse(""));
-                return;
-            }
-            final GlobalNode globalNodeWithoutConstExp = (GlobalNode) globalNode.simplify(initSymbols).second;
             final LabelTable lt = new LabelTable();
             final Pair<IntermediateCode, IntermediateCode> global =
-                    globalNodeWithoutConstExp.iCode(lt, new SymbolTable(Collections.emptyMap(),
-                            new HashMap<>()), null, null, 0).second;
+                    SyntaxTreeBuilder
+                            .fetch(ParserController.CompUnit
+                                    .parse(new TokenSupporter(Tokenizer
+                                            .lex(SimpleIO.input(in)))))
+                            .simplify(new SymbolTable(Collections.emptyMap(), new HashMap<>())).second
+                            .iCode(lt, new SymbolTable(Collections.emptyMap(),
+                                    new HashMap<>()), null, null, 0).second;
             final IntermediateCode head = optimize(lt, global).first;
             IntermediateCode p = head;
             final StringJoiner make = new StringJoiner("\n");
@@ -238,6 +228,9 @@ public class Compiler {
                         break;
                     case "--c1":
                         constTimes = 1;
+                        break;
+                    case "--check":
+                        ckc = true;
                         break;
                 }
             }
