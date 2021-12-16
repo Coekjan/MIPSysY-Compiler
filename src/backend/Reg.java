@@ -25,11 +25,12 @@ public class Reg extends Element {
     public static final Reg S5 = new Reg("s5");
     public static final Reg S6 = new Reg("s6");
     public static final Reg S7 = new Reg("s7");
+    public static final Reg S8 = new Reg("gp");
     public static final Reg CT = new Reg("fp"); // Compiler Temp
 
     public final String name;
 
-    public Reg(String name) {
+    private Reg(String name) {
         this.name = name;
     }
 
@@ -49,5 +50,9 @@ public class Reg extends Element {
     @Override
     public int hashCode() {
         return Objects.hash(name);
+    }
+
+    public boolean isSaved() {
+        return name.startsWith("s") || name.equals("gp");
     }
 }

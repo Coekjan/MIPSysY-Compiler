@@ -1,11 +1,16 @@
 package backend;
 
+import midend.IntermediateCode;
 import midend.Value;
 import utils.Pair;
 
 import java.util.*;
 
 public interface RegScheduler {
+    List<Reg> regs = Arrays.asList(
+            Reg.T0, Reg.T1, Reg.T2, Reg.T3, Reg.T4, Reg.T5, Reg.T6, Reg.T7,
+            Reg.S0, Reg.S1, Reg.S2, Reg.S3, Reg.S4, Reg.S5, Reg.S6, Reg.S7, Reg.S8
+    );
     /**
      * @return first: var-name, second: register-name
      */
@@ -25,4 +30,8 @@ public interface RegScheduler {
     Optional<Reg> find(Value name);
 
     Map<Reg, Value> current();
+
+    void switchContext(String context);
+
+    boolean active(IntermediateCode code, Value value);
 }

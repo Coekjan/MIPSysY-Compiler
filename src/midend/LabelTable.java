@@ -47,7 +47,7 @@ public class LabelTable /* yielded by ast */ {
     public void minifyLabels(Collection<String> usedLabels) {
         final Set<String> unusedLabels = new HashSet<>();
         labelsMap.keySet().forEach(l -> {
-            if (!usedLabels.contains(l)) {
+            if (!usedLabels.contains(l) && l.startsWith("@")) {
                 unusedLabels.add(l);
             }
         });

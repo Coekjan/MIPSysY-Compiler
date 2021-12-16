@@ -3,6 +3,7 @@ package midend;
 import utils.Pair;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * JUST for function body, not for global
@@ -153,24 +154,44 @@ public class BasicBlockOptimizer implements Optimizer.BlockOptimizer {
         } while (diff);
     }
 
-    protected void activeDefUse(Pair<BasicBlock, BasicBlock> basicBlock) {
+    protected void activeDefUse(Pair<BasicBlock, BasicBlock> basicBlock, boolean reachDef) {
         BasicBlock p = basicBlock.first;
         while (p != null) {
             activeDef.put(p, new HashSet<>());
             activeUse.put(p, new HashSet<>());
-            IntermediateCode code = p.getHead();
-            while (true) {
-                if (code instanceof Definite) {
-                    final Value def = ((Definite) code).getDef();
-                    activeDef.get(p).add(def);
-                    if (!activeDefOfICode.containsKey(def)) activeDefOfICode.put(def, new HashSet<>());
-                    activeDefOfICode.get(def).add(code);
+            if (reachDef) {
+                IntermediateCode code = p.getHead();
+                while (true) {
+                    if (code instanceof Definite) {
+                        final Value def = ((Definite) code).getDef();
+                        activeDef.get(p).add(def);
+                        if (!activeDefOfICode.containsKey(def)) activeDefOfICode.put(def, new HashSet<>());
+                        activeDefOfICode.get(def).add(code);
+                    }
+                    if (code instanceof Usage) {
+                        activeUse.get(p).addAll(((Usage<?>) code).getUse().stream()
+                                .filter(i -> !(i instanceof ImmValue)).collect(Collectors.toList()));
+                    }
+                    if (code == p.getTail()) break;
+                    code = code.getNext();
                 }
-                if (code instanceof Usage) {
-                    activeUse.get(p).addAll(((Usage<?>) code).getUse());
+            } else {
+                IntermediateCode code = p.getTail();
+                while (true) {
+                    if (code instanceof Definite) {
+                        final Value def = ((Definite) code).getDef();
+                        activeDef.get(p).add(def);
+                        if (!activeDefOfICode.containsKey(def)) activeDefOfICode.put(def, new HashSet<>());
+                        activeDefOfICode.get(def).add(code);
+                        activeUse.get(p).remove(def);
+                    }
+                    if (code instanceof Usage) {
+                        activeUse.get(p).addAll(((Usage<?>) code).getUse().stream()
+                                .filter(i -> !(i instanceof ImmValue)).collect(Collectors.toList()));
+                    }
+                    if (code == p.getHead()) break;
+                    code = code.getPrev();
                 }
-                if (code == p.getTail()) break;
-                code = code.getNext();
             }
             if (p == basicBlock.second) break;
             p = p.getNext();
@@ -302,7 +323,7 @@ public class BasicBlockOptimizer implements Optimizer.BlockOptimizer {
     }
 
     protected void prepare(FlowGraph flowGraph, Pair<BasicBlock, BasicBlock> basicBlock) {
-        activeDefUse(basicBlock);
+        activeDefUse(basicBlock, true);
         reachInOut(flowGraph, basicBlock);
     }
 

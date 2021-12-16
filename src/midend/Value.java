@@ -35,4 +35,12 @@ public abstract class Value {
     public int hashCode() {
         return Objects.hash(symbol);
     }
+
+    public boolean isGlobal() {
+        return symbol.endsWith("%1");
+    }
+
+    public boolean isTemp() {
+        return Character.isDigit(symbol.charAt(0));
+    }
 }

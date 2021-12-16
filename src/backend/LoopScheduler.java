@@ -1,16 +1,12 @@
 package backend;
 
+import midend.IntermediateCode;
 import midend.Value;
 import utils.Pair;
 
 import java.util.*;
 
 public class LoopScheduler implements RegScheduler {
-    private final List<Reg> regs = Arrays.asList(
-            Reg.T0, Reg.T1, Reg.T2, Reg.T3, Reg.T4, Reg.T5, Reg.T6, Reg.T7,
-            Reg.S0, Reg.S1, Reg.S2, Reg.S3, Reg.S4, Reg.S5, Reg.S6, Reg.S7
-    );
-
     private final Map<Reg, Value> cur = new HashMap<>();
     private final List<Reg> inUse = new LinkedList<>();
     private final List<Reg> free = new LinkedList<>(regs);
@@ -73,5 +69,14 @@ public class LoopScheduler implements RegScheduler {
     @Override
     public Map<Reg, Value> current() {
         return cur;
+    }
+
+    @Override
+    public void switchContext(String context) {
+    }
+
+    @Override
+    public boolean active(IntermediateCode code, Value value) {
+        return true;
     }
 }

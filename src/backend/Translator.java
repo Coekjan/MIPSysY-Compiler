@@ -102,20 +102,34 @@ public class Translator {
                             final MIPSCode f = new MIPSCode.NopCode();
                             MIPSCode p = f;
                             final Map<Reg, Value> cur = t.scheduler.current();
-                            final List<Reg> removeList = new LinkedList<>();
                             for (Reg r : cur.keySet()) {
                                 final Value v = cur.get(r);
-                                if (v instanceof WordValue || Character.isDigit(v.symbol.charAt(0))) {
+                                if (v instanceof WordValue) {
+                                    if (t.scheduler.active(c, v) && !r.isSaved() || v.isGlobal() || r.isSaved()) {
+                                        p = p.link(new MIPSCode.StoreCode(r, t.addressMap.get(v)));
+                                    }
+                                } else if (v instanceof AddrValue && v.isTemp()) {
                                     p = p.link(new MIPSCode.StoreCode(r, t.addressMap.get(v)));
                                 }
-                                removeList.add(r);
                             }
-                            removeList.forEach(t.scheduler::remove);
                             p = p.link(new MIPSCode.StoreCode(Reg.RET_ADR, new RelativeAddress(Reg.SP, 0)));
                             final CallFunction code = (CallFunction) c;
                             assert !code.label.startsWith("@");
                             p = p.link(new MIPSCode.JumpAndLink("funct_" + code.label));
                             p = p.link(new MIPSCode.LoadCode(Reg.RET_ADR, new RelativeAddress(Reg.SP, 0)));
+                            for (Reg r : cur.keySet()) {
+                                final Value varName = cur.get(r);
+                                final Address address = t.addressMap.get(varName);
+                                if (address instanceof RelativeAddress || varName instanceof WordValue) {
+                                    if (varName instanceof AddrValue && !t.params.contains(varName) && !varName.isTemp()) {
+                                        p = p.link(new MIPSCode.LoadAddressCode(r, address));
+                                    } else {
+                                        p = p.link(new MIPSCode.LoadCode(r, address));
+                                    }
+                                } else {
+                                    p = p.link(new MIPSCode.LoadLabelAddressCode(r, ((AbsoluteAddress) address).label));
+                                }
+                            }
                             return Pair.of(Pair.of(f, p), c.getNext());
                         });
                         put(Declaration.class, (t, c) -> {
@@ -123,23 +137,48 @@ public class Translator {
                             MIPSCode p = f;
                             final Declaration code = (Declaration) c;
                             assert !code.global;
-                            final RelativeAddress address = (RelativeAddress) t.addressMap.get(code.symbol);
-                            List<Value> initValues = code.initValues;
-                            for (int i = 0, initValuesSize = initValues.size(); i < initValuesSize; ++i) {
-                                Value v = initValues.get(i);
-                                final Pair<MIPSCode, Element> op = getRegForSymOrImm(t, v, p, new LinkedList<>());
-                                p = op.first;
-                                if (op.second instanceof Imm) {
-                                    p = p.link(new MIPSCode.BinaryRegImmCode(MIPSCode.BinaryRegImmCode.Op.ADDIU,
-                                            Reg.CT, Reg._0, (Imm) op.second));
-                                    p = p.link(new MIPSCode.StoreCode(Reg.CT,
-                                            new RelativeAddress(address.base, address.offset + i * 4)));
-                                } else {
-                                    p = p.link(new MIPSCode.StoreCode((Reg) op.second,
-                                            new RelativeAddress(address.base, address.offset + i * 4)));
+                            if (code.symbol instanceof WordValue) {
+                                if (!code.initValues.isEmpty()) {
+                                    assert code.initValues.size() == 1;
+                                    final Value v = code.initValues.get(0);
+                                    final Pair<MIPSCode, Element> left =
+                                            getRegForSymOrImm(t, code.symbol, p, new LinkedList<>(), false);
+                                    p = left.first;
+                                    final Pair<MIPSCode, Element> right = getRegForSymOrImm(t, v, p, new LinkedList<>());
+                                    p = right.first;
+                                    if (right.second instanceof Imm) {
+                                        p = p.link(new MIPSCode.LoadImmCode((Reg) left.second, (Imm) right.second));
+                                    } else {
+                                        p = p.link(new MIPSCode.BinaryRegRegCode(MIPSCode.BinaryRegRegCode.Op.ADDU,
+                                                (Reg) left.second, (Reg) right.second, Reg._0));
+                                    }
                                 }
+                                return Pair.of(Pair.of(f, p), c.getNext());
+                            } else {
+                                final RelativeAddress address = (RelativeAddress) t.addressMap.get(code.symbol);
+                                List<Value> initValues = code.initValues;
+                                for (int i = 0, initValuesSize = initValues.size(); i < initValuesSize; ++i) {
+                                    Value v = initValues.get(i);
+                                    final Pair<MIPSCode, Element> op = getRegForSymOrImm(t, v, p, new LinkedList<>());
+                                    p = op.first;
+                                    if (op.second instanceof Imm) {
+                                        p = p.link(new MIPSCode.BinaryRegImmCode(MIPSCode.BinaryRegImmCode.Op.ADDIU,
+                                                Reg.CT, Reg._0, (Imm) op.second));
+                                        p = p.link(new MIPSCode.StoreCode(Reg.CT,
+                                                new RelativeAddress(address.base, address.offset + i * 4)));
+                                    } else {
+                                        p = p.link(new MIPSCode.StoreCode((Reg) op.second,
+                                                new RelativeAddress(address.base, address.offset + i * 4)));
+                                    }
+                                }
+                                final Pair<MIPSCode, Element> ele = getRegForSymOrImm(t, code.symbol, p, new LinkedList<>());
+                                if (p == ele.first) {
+                                    p = ele.first.link(new MIPSCode.LoadAddressCode((Reg) ele.second, t.addressMap.get(code.symbol)));
+                                } else {
+                                    p = ele.first;
+                                }
+                                return Pair.of(Pair.of(f, p), c.getNext());
                             }
-                            return Pair.of(Pair.of(f, p), c.getNext());
                         });
                         put(Exit.class, (t, c) -> {
                             final MIPSCode f = new MIPSCode.LoadImmCode(Reg.RET_VAL, new Imm(10));
@@ -149,6 +188,7 @@ public class Translator {
                         });
                         put(FuncEntry.class, (t, c) -> {
                             t.params.clear();
+                            t.scheduler.clear();
                             final MIPSCode f = new MIPSCode.NopCode();
                             MIPSCode p = f;
                             int count = 4; // $ra -> 0($sp)
@@ -178,6 +218,7 @@ public class Translator {
                             p = p.link(new MIPSCode.BinaryRegImmCode(MIPSCode.BinaryRegImmCode.Op.ADDIU,
                                     Reg.SP, Reg.SP, new Imm(-count)));
                             t.symbolList.tagTable.assign("funct_" + code.label, f);
+                            t.scheduler.switchContext(code.label);
                             return Pair.of(Pair.of(f, p), code.getNext());
                         });
                         put(GetInt.class, (t, c) -> {
@@ -227,9 +268,17 @@ public class Translator {
                             return Pair.of(Pair.of(f, f), c.getNext());
                         });
                         put(ParameterFetch.class, (t, c) -> {
-                            t.params.add(((ParameterFetch) c).name);
+                            final ParameterFetch code = (ParameterFetch) c;
+                            t.params.add(code.name);
                             final MIPSCode f = new MIPSCode.NopCode();
-                            return Pair.of(Pair.of(f, f), c.getNext());
+                            MIPSCode p = f;
+                            final Pair<MIPSCode, Element> ele = getRegForSymOrImm(t, code.name, p, new LinkedList<>());
+                            if (p == ele.first) {
+                                p = ele.first.link(new MIPSCode.LoadCode((Reg) ele.second, t.addressMap.get(code.name)));
+                            } else {
+                                p = ele.first;
+                            }
+                            return Pair.of(Pair.of(f, p), c.getNext());
                         });
                         put(Print.class, (t, c) -> {
                             final MIPSCode f = new MIPSCode.NopCode();
@@ -409,15 +458,16 @@ public class Translator {
         while (!op.isPresent()) {
             final Pair<Value, Reg> store = t.scheduler.overflow(h);
             if (store.first instanceof WordValue || Character.isDigit(store.first.symbol.charAt(0))) {
-                p = p.link(new MIPSCode.StoreCode(store.second, t.addressMap.get(store.first)));
+                if (t.scheduler.active(t.currentPointer, store.first)) {
+                    p = p.link(new MIPSCode.StoreCode(store.second, t.addressMap.get(store.first)));
+                }
             }
             op = t.scheduler.allocReg(varName, h);
         }
         if (load) {
             final Address address = t.addressMap.get(varName);
             if (address instanceof RelativeAddress || varName instanceof WordValue) {
-                if (varName instanceof AddrValue && !left && !t.params.contains(varName) &&
-                        !Character.isDigit(varName.symbol.charAt(0))) {
+                if (varName instanceof AddrValue && !left && !t.params.contains(varName) && !varName.isTemp()) {
                     p = p.link(new MIPSCode.LoadAddressCode(op.get(), address));
                 } else {
                     p = p.link(new MIPSCode.LoadCode(op.get(), address));
@@ -435,6 +485,7 @@ public class Translator {
     private final SymbolList symbolList;
     private final Map<Value, Address> addressMap = new HashMap<>();
     private final List<Value> params = new LinkedList<>();
+    private IntermediateCode currentPointer;
     private int frameSize = 0;
     private int strCount = 0;
     private int pushCount = 0;
@@ -479,19 +530,24 @@ public class Translator {
         MIPSCode q = firstTrans.first.second;
         interP = firstTrans.second;
         while (interP != null) {
-            Optional<List<String>> labels = labelTable.find(interP);
+            currentPointer = interP;
+            Optional<List<String>> labels = labelTable.find(interP.getNext());
             q = q.link(new MIPSCode.Comment(interP.toString()));
-            if (labels.isPresent() || interP instanceof Jump || interP instanceof Branch || interP instanceof Return) {
+            if (interP instanceof Jump || interP instanceof Branch || interP instanceof Return) {
+                final List<Reg> removeList = new LinkedList<>();
                 for (Reg reg : scheduler.current().keySet()) {
                     final Value key = scheduler.current().get(reg);
                     final Address address = addressMap.get(key);
                     if (address instanceof RelativeAddress || key instanceof WordValue) {
-                        if (!(key instanceof AddrValue)) {
+                        if (!(key instanceof AddrValue) &&
+                                (interP.getPrev() == null || scheduler.active(interP.getPrev(), key)) &&
+                                !reg.isSaved() || key.isGlobal()) {
                             q = q.link(new MIPSCode.StoreCode(reg, address));
                         }
+                        if (!reg.isSaved() || key.isGlobal()) removeList.add(reg);
                     }
                 }
-                scheduler.clear();
+                removeList.forEach(scheduler::remove);
             }
             final Pair<Pair<MIPSCode, MIPSCode>, IntermediateCode> nextCode;
             try {
@@ -502,10 +558,24 @@ public class Translator {
                 System.exit(1);
                 return null;
             }
-            labels.ifPresent(s -> s.forEach(l -> symbolList.tagTable.assign(l.startsWith("@") ? l.substring(1) : l,
-                    nextCode.first.first)));
+            labelTable.find(interP).ifPresent(s -> s.forEach(l -> symbolList.tagTable
+                    .assign(l.startsWith("@") ? l.substring(1) : l, nextCode.first.first)));
             q.link(nextCode.first.first);
             q = nextCode.first.second;
+            if (labels.isPresent()) {
+                final List<Reg> removeList = new LinkedList<>();
+                for (Reg reg : scheduler.current().keySet()) {
+                    final Value key = scheduler.current().get(reg);
+                    final Address address = addressMap.get(key);
+                    if (address instanceof RelativeAddress || key instanceof WordValue) {
+                        if (!(key instanceof AddrValue) && scheduler.active(interP, key) && !reg.isSaved() || key.isGlobal()) {
+                            q = q.link(new MIPSCode.StoreCode(reg, address));
+                        }
+                        if (!reg.isSaved() || key.isGlobal()) removeList.add(reg);
+                    }
+                }
+                removeList.forEach(scheduler::remove);
+            }
             interP = nextCode.second;
         }
         return Pair.of(firstCode, q);

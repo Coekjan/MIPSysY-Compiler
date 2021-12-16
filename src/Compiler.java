@@ -1,4 +1,6 @@
+import backend.ColorScheduler;
 import backend.LoopScheduler;
+import backend.RegAllocator;
 import backend.Translator;
 import exceptions.SysYException;
 import frontend.*;
@@ -89,6 +91,8 @@ public class Compiler {
         }
     }
 
+    private static ColorScheduler colorScheduler;
+
     public static void irTest(String in, String out) throws IOException {
         try {
             final TokenSupporter supporter = new TokenSupporter(Tokenizer.lex(SimpleIO.input(in)));
@@ -165,7 +169,7 @@ public class Compiler {
                 p = p.getNext();
             }
             SimpleIO.output("ir.txt", make, StringJoiner::toString);
-            final Translator translator = new Translator(head, new LoopScheduler(), lt);
+            final Translator translator = new Translator(head, colorScheduler, lt);
             final String s = translator.translate();
             SimpleIO.output(out, s, l -> l);
         } catch (SysYException e) {
@@ -182,9 +186,11 @@ public class Compiler {
             final Pair<IntermediateCode, IntermediateCode> blk = new Optimizer.SimplifyConst().apply(lt,
                             new Optimizer.RemoveRedundantLabel().apply(lt,
                                     new Optimizer.RemoveNop().apply(lt, block)));
+            final Map<String, RegAllocator> allocatorMap = new HashMap<>();
             IntermediateCode p = blk.first;
             IntermediateCode start;
             IntermediateCode end = null;
+            IntermediateCode func;
             final IntermediateCode head = new Nop();
             IntermediateCode tail = head;
             while (!(p instanceof FuncEntry)) {
@@ -193,6 +199,7 @@ public class Compiler {
                 p = p.getNext();
             }
             while (p != null) {
+                func = p;
                 tail.link(p);
                 tail = tail.getNext();
                 p = p.getNext();
@@ -206,9 +213,13 @@ public class Compiler {
                 for (int i = 0; i < constTimes; ++i) {
                     opt = new BasicBlockOptimizer().apply(lt, opt);
                 }
+                final RegAllocator allocator = new RegAllocator();
+                allocator.apply(lt, opt);
+                allocatorMap.put(((FuncEntry) func).label, allocator);
                 tail.link(opt.first);
                 tail = opt.second;
             }
+            colorScheduler = new ColorScheduler(allocatorMap);
             return head == tail ? Pair.of(head, head) : Pair.of(head.getNext(), tail);
         } else {
             return block;
