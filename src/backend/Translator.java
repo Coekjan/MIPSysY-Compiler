@@ -3,6 +3,7 @@ package backend;
 import midend.*;
 import utils.Pair;
 
+import java.math.BigInteger;
 import java.util.*;
 
 public class Translator {
@@ -89,11 +90,20 @@ public class Translator {
                             final Pair<MIPSCode, Element> op = getRegForSymOrImm(t, code.value1, p, new LinkedList<>());
                             p = op.first;
                             assert code.label.startsWith("@");
-                            if (op.second instanceof Imm) {
-                                p = p.link(new MIPSCode.LoadImmCode(Reg.CT, (Imm) op.second));
-                                p = p.link(new MIPSCode.BranchNotEq(Reg.CT, Reg._0, code.label.substring(1)));
-                            } else {
-                                p = p.link(new MIPSCode.BranchNotEq((Reg) op.second, Reg._0, code.label.substring(1)));
+                            if (code.option == Branch.BranchOption.NE) {
+                                if (op.second instanceof Imm) {
+                                    p = p.link(new MIPSCode.LoadImmCode(Reg.CT, (Imm) op.second));
+                                    p = p.link(new MIPSCode.BranchNotEq(Reg.CT, Reg._0, code.label.substring(1)));
+                                } else {
+                                    p = p.link(new MIPSCode.BranchNotEq((Reg) op.second, Reg._0, code.label.substring(1)));
+                                }
+                            } else if (code.option == Branch.BranchOption.EQ) {
+                                if (op.second instanceof Imm) {
+                                    p = p.link(new MIPSCode.LoadImmCode(Reg.CT, (Imm) op.second));
+                                    p = p.link(new MIPSCode.BranchEqual(Reg.CT, Reg._0, code.label.substring(1)));
+                                } else {
+                                    p = p.link(new MIPSCode.BranchEqual((Reg) op.second, Reg._0, code.label.substring(1)));
+                                }
                             }
                             return Pair.of(Pair.of(f, p), c.getNext());
                         });
@@ -387,8 +397,27 @@ public class Translator {
             p = p.link(new MIPSCode.BinaryRegRegCode(MIPSCode.BinaryRegRegCode.Op.fromBinary(code.operation),
                     (Reg) left, Reg.CT, (Reg) op2));
         } else if (op2 instanceof Imm) {
-            p = p.link(new MIPSCode.BinaryRegImmCode(MIPSCode.BinaryRegImmCode.Op.fromBinary(code.operation),
-                    (Reg) left, (Reg) op1, (Imm) op2));
+            final int d = ((Imm) op2).value;
+            if (code.operation == AssignBinaryOperation.BinaryOperation.DIV && d != 0) {
+                final int l = Math.max(((int) Math.ceil(Math.log(Math.abs(d)) / Math.log(2))), 1);
+                final BigInteger m = BigInteger.ONE.add(BigInteger.valueOf(2).pow(31 + l)
+                        .divide(BigInteger.valueOf(Math.abs(d))));
+                final BigInteger m_ = m.subtract(BigInteger.valueOf(2).pow(32));
+                final int dSign = d < 0 ? -1 : 0;
+                final int shPost = l - 1;
+                p = p.link(new MIPSCode.LoadImmCode(Reg.CT, new Imm(m_.intValue())));
+                p = p.link(new MIPSCode.Mult(Reg.CT, (Reg) op1));
+                p = p.link(new MIPSCode.MoveFromHI(Reg.CT));
+                p = p.link(new MIPSCode.BinaryRegRegCode(MIPSCode.BinaryRegRegCode.Op.ADDU, (Reg) left, Reg.CT, (Reg) op1));
+                p = p.link(new MIPSCode.BinaryRegImmCode(MIPSCode.BinaryRegImmCode.Op.SRA, (Reg) left, (Reg) left, new Imm(shPost)));
+                p = p.link(new MIPSCode.BinaryRegRegCode(MIPSCode.BinaryRegRegCode.Op.SLT, Reg.CT, (Reg) op1, Reg._0));
+                p = p.link(new MIPSCode.BinaryRegRegCode(MIPSCode.BinaryRegRegCode.Op.ADDU, (Reg) left, (Reg) left, Reg.CT));
+                p = p.link(new MIPSCode.BinaryRegImmCode(MIPSCode.BinaryRegImmCode.Op.XORI, (Reg) left, (Reg) left, new Imm(dSign)));
+                p = p.link(new MIPSCode.BinaryRegImmCode(MIPSCode.BinaryRegImmCode.Op.SUBIU, (Reg) left, (Reg) left, new Imm(dSign)));
+            } else {
+                p = p.link(new MIPSCode.BinaryRegImmCode(MIPSCode.BinaryRegImmCode.Op.fromBinary(code.operation),
+                        (Reg) left, (Reg) op1, (Imm) op2));
+            }
         } else {
             p = p.link(new MIPSCode.BinaryRegRegCode(MIPSCode.BinaryRegRegCode.Op.fromBinary(code.operation),
                     (Reg) left, (Reg) op1, (Reg) op2));

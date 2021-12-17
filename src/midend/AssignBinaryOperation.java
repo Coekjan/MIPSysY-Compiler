@@ -17,6 +17,7 @@ public class AssignBinaryOperation extends IntermediateCode implements IntroSpac
                 put(BinaryOperation.MOD, (x, y) -> x % y);
                 put(BinaryOperation.AND, (x, y) -> x & y);
                 put(BinaryOperation.OR, (x, y) -> x | y);
+                put(BinaryOperation.SLL, (x, y) -> x << y);
                 put(BinaryOperation.GT, (x, y) -> x > y ? 1 : 0);
                 put(BinaryOperation.GE, (x, y) -> x >= y ? 1 : 0);
                 put(BinaryOperation.LT, (x, y) -> x < y ? 1 : 0);
@@ -75,12 +76,19 @@ public class AssignBinaryOperation extends IntermediateCode implements IntroSpac
                             return new Move(temporary, left, op2);
                         } else if (op1Value == -1) {
                             return new AssignUnaryOperation(temporary, left, NEG, op2);
+                        } else if (op1Value > 0 && Integer.bitCount(op1Value) == 1) {
+                            int bit = 0;
+                            while ((op1Value & (1 << bit)) == 0) {
+                                bit += 1;
+                            }
+                            assert bit != 0;
+                            return new AssignBinaryOperation(temporary, left, BinaryOperation.SLL, op2, new ImmValue(bit));
                         }
                     } else {
                         return new AssignBinaryOperation(temporary, left, BinaryOperation.MUL, op2, op1).simplify();
                     }
                     return new AssignBinaryOperation(temporary, left, operation, op2, op1);
-                case DIV: // TODO: Div Optimization
+                case DIV:
                     if (op1 instanceof ImmValue && ((ImmValue) op1).value == 0) {
                         return new Move(temporary, left, new ImmValue(0));
                     } else if (op2 instanceof ImmValue) {
@@ -135,7 +143,7 @@ public class AssignBinaryOperation extends IntermediateCode implements IntroSpac
     }
 
     public enum BinaryOperation {
-        ADD, SUB, MUL, DIV, MOD, AND, OR, GT, GE, LT, LE, EQ, NE;
+        ADD, SUB, MUL, DIV, MOD, AND, OR, SLL, GT, GE, LT, LE, EQ, NE;
 
         @Override
         public String toString() {

@@ -48,7 +48,7 @@ public abstract class MIPSCode extends LinkedNode<MIPSCode> {
 
     public static class BinaryRegImmCode extends MIPSCode {
         public enum Op {
-            ADDIU, SUBIU, MUL, DIV, REM, ANDI, ORI, SGT, SGE, SLTI, SLE, SEQ, SNE, SLL;
+            ADDIU, SUBIU, MUL, DIV, REM, ANDI, ORI, SGT, SGE, SLTI, SLE, SEQ, SNE, SLL, SRA, XORI;
 
             @Override
             public String toString() {
@@ -64,6 +64,7 @@ public abstract class MIPSCode extends LinkedNode<MIPSCode> {
                     case MOD: return REM;
                     case AND: return ANDI;
                     case OR: return ORI;
+                    case SLL: return SLL;
                     case GT: return SGT;
                     case GE: return SGE;
                     case LT: return SLTI;
@@ -95,7 +96,7 @@ public abstract class MIPSCode extends LinkedNode<MIPSCode> {
 
     public static class BinaryRegRegCode extends MIPSCode {
         public enum Op {
-            ADDU, SUBU, MUL, DIV, REM, AND, OR, SGT, SGE, SLT, SLE, SEQ, SNE;
+            ADDU, SUBU, MUL, DIV, REM, AND, OR, SLL, SGT, SGE, SLT, SLE, SEQ, SNE;
 
             @Override
             public String toString() {
@@ -111,6 +112,7 @@ public abstract class MIPSCode extends LinkedNode<MIPSCode> {
                     case MOD: return REM;
                     case AND: return AND;
                     case OR: return OR;
+                    case SLL: return SLL;
                     case GT: return SGT;
                     case GE: return SGE;
                     case LT: return SLT;
@@ -137,6 +139,34 @@ public abstract class MIPSCode extends LinkedNode<MIPSCode> {
         @Override
         String stringify() {
             return op.toString() + " " + dest + ", " + source + ", " + target;
+        }
+    }
+
+    public static class Mult extends MIPSCode {
+        public final Reg reg1;
+        public final Reg reg2;
+
+        public Mult(Reg reg1, Reg reg2) {
+            this.reg1 = reg1;
+            this.reg2 = reg2;
+        }
+
+        @Override
+        String stringify() {
+            return "mult " + reg1 + ", " + reg2;
+        }
+    }
+
+    public static class MoveFromHI extends MIPSCode {
+        public final Reg target;
+
+        public MoveFromHI(Reg target) {
+            this.target = target;
+        }
+
+        @Override
+        String stringify() {
+            return "mfhi " + target;
         }
     }
 
@@ -184,6 +214,23 @@ public abstract class MIPSCode extends LinkedNode<MIPSCode> {
         @Override
         String stringify() {
             return "bne " + r1 + ", " + r2 + ", " + tag;
+        }
+    }
+
+    public static class BranchEqual extends MIPSCode {
+        public final Reg r1;
+        public final Reg r2;
+        public final String tag;
+
+        public BranchEqual(Reg r1, Reg r2, String tag) {
+            this.r1 = r1;
+            this.r2 = r2;
+            this.tag = tag;
+        }
+
+        @Override
+        String stringify() {
+            return "beq " + r1 + ", " + r2 + ", " + tag;
         }
     }
 

@@ -1,5 +1,6 @@
 package frontend;
 
+import backend.Imm;
 import exceptions.SysYException;
 import midend.*;
 import utils.Pair;
@@ -40,18 +41,14 @@ public class LoopNode implements StmtNode {
     @Override
     public Pair<SymbolTable, ICodeInfo> iCode(LabelTable lt, SymbolTable st, String lpBegin, String lpEnd, int tc) {
         final ICodeInfo conditionCode = condition.iCode(lt, st, lpBegin, lpEnd, tc).second;
-        final String loopBegin = lt.createLabel();
-        final String loopEnd = lt.createLabel();
-        final Value brCond = new WordValue(String.valueOf(conditionCode.tempCount + 1));
-        final IntermediateCode invert = new AssignUnaryOperation(true, brCond,
-                AssignUnaryOperation.UnaryOperation.NOT, conditionCode.finalSym);
-        final IntermediateCode branch = new Branch(brCond, loopEnd);
+        final String loopBegin = lt.createLabel(true, true);
+        final String loopEnd = lt.createLabel(true, false);
+        final IntermediateCode branch = new Branch(Branch.BranchOption.EQ, conditionCode.finalSym, new ImmValue(0), loopEnd);
         final IntermediateCode jumpBegin = new Jump(loopBegin);
         final IntermediateCode end = new Nop();
         final ICodeInfo bodyCode = loopBody.iCode(lt, st.yield(Collections.emptyMap()),
-                loopBegin, loopEnd, conditionCode.tempCount + 1).second;
-        conditionCode.second.link(invert);
-        invert.link(branch);
+                loopBegin, loopEnd, conditionCode.tempCount).second;
+        conditionCode.second.link(branch);
         branch.link(bodyCode.first);
         bodyCode.second.link(jumpBegin);
         jumpBegin.link(end);

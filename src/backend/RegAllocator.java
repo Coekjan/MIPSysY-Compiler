@@ -15,6 +15,10 @@ public class RegAllocator extends BasicBlockOptimizer {
             return mapper.keySet().size();
         }
 
+        public int deg(Value v) {
+            return mapper.getOrDefault(v, Collections.emptySet()).size();
+        }
+
         public Set<Value> valSet() {
             return new HashSet<>(mapper.keySet());
         }
@@ -115,6 +119,7 @@ public class RegAllocator extends BasicBlockOptimizer {
         final Stack<Pair<Value, Set<Value>>> stack = new Stack<>();
         final Set<Value> noReg = new HashSet<>();
         final List<Reg> registers = RegScheduler.regs.stream().filter(Reg::isSaved).collect(Collectors.toList());
+        final Map<Value, Integer> depth = analyseDepth(lt, basicBlock);
         while (conflictGraph.size() > 0) {
             final Optional<Value> value = conflictGraph.find(s -> s.size() < registers.size());
             if (value.isPresent()) {
@@ -122,7 +127,11 @@ public class RegAllocator extends BasicBlockOptimizer {
                 stack.push(Pair.of(value.get(), edges));
             } else {
                 final Set<Value> vals = conflictGraph.valSet();
-                final Value v = new ArrayList<>(vals).get(vals.size() / 2);
+                final Value v = vals.stream().sorted((v1, v2) -> {
+                    final double w1 = Math.pow(2.0, depth.get(v1)) / conflictGraph.deg(v1);
+                    final double w2 = Math.pow(2.0, depth.get(v2)) / conflictGraph.deg(v2);
+                    return Double.compare(w1, w2);
+                }).collect(Collectors.toList()).get(0);
                 final Set<Value> edges = conflictGraph.removeVal(v);
                 stack.push(Pair.of(v, edges));
                 noReg.add(v);
@@ -143,6 +152,37 @@ public class RegAllocator extends BasicBlockOptimizer {
             }
         }
         return basicBlock;
+    }
+
+    private Map<Value, Integer> analyseDepth(LabelTable lt, Pair<BasicBlock, BasicBlock> basicBlock) {
+        final Map<Value, Integer> depthMap = new HashMap<>();
+        IntermediateCode p = basicBlock.first.getHead();
+        int depth = 0;
+        while (true) {
+            final Optional<List<String>> labels = lt.find(p);
+            if (labels.isPresent()) {
+                if (labels.get().stream().anyMatch(s -> s.startsWith("@label_loop_begin"))) {
+                    depth++;
+                }
+                if (labels.get().stream().anyMatch(s -> s.startsWith("@label_loop_end"))) {
+                    depth--;
+                }
+            }
+            final Set<Value> ref = new HashSet<>();
+            if (p instanceof Definite) {
+                ref.add(((Definite) p).getDef());
+            }
+            if (p instanceof Usage) {
+                ref.addAll(((Usage<?>) p).getUse().stream()
+                        .filter(i -> !(i instanceof ImmValue)).collect(Collectors.toList()));
+            }
+            for (Value v : ref) {
+                depthMap.put(v, Math.max(depth, depthMap.getOrDefault(v, 0)));
+            }
+            if (p == basicBlock.second.getTail()) break;
+            p = p.getNext();
+        }
+        return depthMap;
     }
 
     public boolean active(IntermediateCode code, Value value) {

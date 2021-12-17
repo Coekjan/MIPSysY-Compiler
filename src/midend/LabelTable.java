@@ -21,6 +21,15 @@ public class LabelTable /* yielded by ast */ {
         return "@label_" + labelCount++;
     }
 
+    public String createLabel(boolean loop, boolean begin) {
+        if (loop) {
+            if (begin) return "@label_loop_begin_" + labelCount++;
+            else return "@label_loop_end_" + labelCount++;
+        } else {
+            return createLabel();
+        }
+    }
+
     public void assignLabelToCode(String label, IntermediateCode targetInstruction) {
         labelsMap.put(label, targetInstruction);
         if (!instMap.containsKey(targetInstruction)) {
