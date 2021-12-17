@@ -86,7 +86,7 @@ public class Translator {
                             final MIPSCode f = new MIPSCode.NopCode();
                             MIPSCode p = f;
                             final Branch code = (Branch) c;
-                            final Pair<MIPSCode, Element> op = getRegForSymOrImm(t, code.condition, p, new LinkedList<>());
+                            final Pair<MIPSCode, Element> op = getRegForSymOrImm(t, code.value1, p, new LinkedList<>());
                             p = op.first;
                             assert code.label.startsWith("@");
                             if (op.second instanceof Imm) {

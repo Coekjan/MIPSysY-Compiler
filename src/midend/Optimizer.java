@@ -54,7 +54,7 @@ public interface Optimizer {
                     final String realTarget = getLeafLabel(lt, ((Branch) p).label);
                     referredLabels.add(((Branch) p).label);
                     usedLabels.add(realTarget);
-                    tail.link(new Branch(((Branch) p).condition, realTarget));
+                    tail.link(new Branch(((Branch) p).value1, realTarget));
                 } else if (p instanceof FuncEntry) {
                     lt.find(p).ifPresent(usedLabels::addAll);
                     tail.link(p);
