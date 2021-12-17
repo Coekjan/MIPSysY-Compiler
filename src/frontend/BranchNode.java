@@ -63,19 +63,15 @@ public class BranchNode implements StmtNode {
     @Override
     public Pair<SymbolTable, ICodeInfo> iCode(LabelTable lt, SymbolTable st, String lpBegin, String lpEnd, int tc) {
         final ICodeInfo conditionCode = condition.iCode(lt, st, lpBegin, lpEnd, tc).second;
-        final Value brCond = new WordValue(String.valueOf(conditionCode.tempCount + 1));
         final String thenEndLabel = lt.createLabel();
         final String elseEndLabel = lt.createLabel();
         final ICodeInfo thenBlockCode = thenBlock.iCode(lt, st.yield(Collections.emptyMap()),
-                lpBegin, lpEnd, conditionCode.tempCount + 1).second;
-        final IntermediateCode invert = new AssignUnaryOperation(true, brCond,
-                AssignUnaryOperation.UnaryOperation.NOT, conditionCode.finalSym);
-        final IntermediateCode branch = new Branch(brCond, thenEndLabel);
+                lpBegin, lpEnd, conditionCode.tempCount).second;
+        final IntermediateCode branch = new Branch(Branch.BranchOption.EQ, conditionCode.finalSym, new ImmValue(0), thenEndLabel);
         final IntermediateCode jumpEnd = new Jump(elseEndLabel);
         final IntermediateCode thenEnd = new Nop();
         lt.assignLabelToCode(thenEndLabel, thenEnd);
-        conditionCode.second.link(invert);
-        invert.link(branch);
+        conditionCode.second.link(branch);
         branch.link(thenBlockCode.first);
         thenBlockCode.second.link(jumpEnd);
         jumpEnd.link(thenEnd);

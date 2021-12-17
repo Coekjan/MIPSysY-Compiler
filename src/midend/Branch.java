@@ -33,7 +33,7 @@ public class Branch extends IntermediateCode implements ProbablyConst, ProbablyC
 
         @Override
         public String toString() {
-            return super.toString();
+            return super.toString().toLowerCase();
         }
     }
 
