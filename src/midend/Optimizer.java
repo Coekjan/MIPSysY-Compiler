@@ -37,6 +37,7 @@ public interface Optimizer {
 
     class RemoveRedundantLabel implements Optimizer {
         private final Set<String> usedLabels = new HashSet<>();
+        private final Set<String> referredLabels = new HashSet<>();
 
         @Override
         public Pair<IntermediateCode, IntermediateCode> apply(LabelTable lt, Pair<IntermediateCode, IntermediateCode> block) {
@@ -46,10 +47,12 @@ public interface Optimizer {
             while (true) {
                 if (p instanceof Jump) {
                     final String realTarget = getLeafLabel(lt, ((Jump) p).label);
+                    referredLabels.add(((Jump) p).label);
                     usedLabels.add(realTarget);
                     tail.link(new Jump(realTarget));
                 } else if (p instanceof Branch) {
                     final String realTarget = getLeafLabel(lt, ((Branch) p).label);
+                    referredLabels.add(((Branch) p).label);
                     usedLabels.add(realTarget);
                     tail.link(new Branch(((Branch) p).condition, realTarget));
                 } else if (p instanceof FuncEntry) {
@@ -62,13 +65,16 @@ public interface Optimizer {
                 if (p == block.second) break;
                 p = p.getNext();
             }
-            lt.minifyLabels(usedLabels);
+            lt.minifyLabels(usedLabels, referredLabels);
             return Pair.of(tail == head ? head : head.getNext(), tail);
         }
 
         private String getLeafLabel(LabelTable lt, String label) {
-            final IntermediateCode p = lt.find(label);
-            return p instanceof Jump ? getLeafLabel(lt, ((Jump) p).label) : label;
+            IntermediateCode p = lt.find(label);
+            while (p instanceof Nop && p.getNext() != null) {
+                p = p.getNext();
+            }
+            return (p instanceof Jump && !((Jump) p).label.equals(label)) ? getLeafLabel(lt, ((Jump) p).label) : label;
         }
     }
 

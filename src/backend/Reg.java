@@ -17,6 +17,8 @@ public class Reg extends Element {
     public static final Reg T5 = new Reg("t5");
     public static final Reg T6 = new Reg("t6");
     public static final Reg T7 = new Reg("t7");
+    public static final Reg T8 = new Reg("t8");
+    public static final Reg T9 = new Reg("t9");
     public static final Reg S0 = new Reg("s0");
     public static final Reg S1 = new Reg("s1");
     public static final Reg S2 = new Reg("s2");
@@ -26,6 +28,11 @@ public class Reg extends Element {
     public static final Reg S6 = new Reg("s6");
     public static final Reg S7 = new Reg("s7");
     public static final Reg S8 = new Reg("gp");
+    public static final Reg S9 = new Reg("k0");
+    public static final Reg S10 = new Reg("k1");
+    public static final Reg S11 = new Reg("a1");
+    public static final Reg S12 = new Reg("a2");
+    public static final Reg S13 = new Reg("a3");
     public static final Reg CT = new Reg("fp"); // Compiler Temp
 
     public final String name;
@@ -53,6 +60,7 @@ public class Reg extends Element {
     }
 
     public boolean isSaved() {
-        return name.startsWith("s") || name.equals("gp");
+        return name.startsWith("s") || name.equals(S8.name) || name.equals(S9.name) ||
+                name.equals(S10.name) || name.equals(S11.name) || name.equals(S12.name) || name.equals(S13.name);
     }
 }

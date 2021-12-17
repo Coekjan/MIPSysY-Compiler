@@ -75,6 +75,10 @@ public class ColorScheduler implements RegScheduler {
     public Optional<Reg> find(Value name) {
         for (Reg r : cur.keySet()) {
             if (cur.get(r).equals(name)) {
+                if (inUse.contains(r)) {
+                    inUse.remove(r);
+                    inUse.add(r);
+                }
                 return Optional.of(r);
             }
         }

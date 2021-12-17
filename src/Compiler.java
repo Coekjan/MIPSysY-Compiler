@@ -1,7 +1,4 @@
-import backend.ColorScheduler;
-import backend.LoopScheduler;
-import backend.RegAllocator;
-import backend.Translator;
+import backend.*;
 import exceptions.SysYException;
 import frontend.*;
 import midend.*;
@@ -14,7 +11,7 @@ import java.util.*;
 public class Compiler {
     public static boolean opt = true;
     public static boolean ckc = false;
-    public static int constTimes = 6;
+    public static int constTimes = 10;
 
     public static void tokenizerTest(String in, String out) throws IOException {
         try {
@@ -91,7 +88,7 @@ public class Compiler {
         }
     }
 
-    private static ColorScheduler colorScheduler;
+    private static RegScheduler scheduler;
 
     public static void irTest(String in, String out) throws IOException {
         try {
@@ -169,7 +166,7 @@ public class Compiler {
                 p = p.getNext();
             }
             SimpleIO.output("ir.txt", make, StringJoiner::toString);
-            final Translator translator = new Translator(head, colorScheduler, lt);
+            final Translator translator = new Translator(head, scheduler, lt);
             final String s = translator.translate();
             SimpleIO.output(out, s, l -> l);
         } catch (SysYException e) {
@@ -211,7 +208,7 @@ public class Compiler {
                 assert end != null;
                 Pair<IntermediateCode, IntermediateCode> opt = Pair.of(start, end);
                 for (int i = 0; i < constTimes; ++i) {
-                    opt = new BasicBlockOptimizer().apply(lt, opt);
+                    opt = new Optimizer.RemoveRedundantLabel().apply(lt, new BasicBlockOptimizer().apply(lt, opt));
                 }
                 final RegAllocator allocator = new RegAllocator();
                 allocator.apply(lt, opt);
@@ -219,9 +216,10 @@ public class Compiler {
                 tail.link(opt.first);
                 tail = opt.second;
             }
-            colorScheduler = new ColorScheduler(allocatorMap);
+            scheduler = new ColorScheduler(allocatorMap);
             return head == tail ? Pair.of(head, head) : Pair.of(head.getNext(), tail);
         } else {
+            scheduler = new LoopScheduler();
             return block;
         }
     }

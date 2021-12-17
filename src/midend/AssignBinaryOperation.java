@@ -15,8 +15,8 @@ public class AssignBinaryOperation extends IntermediateCode implements IntroSpac
                 put(BinaryOperation.MUL, (x, y) -> x * y);
                 put(BinaryOperation.DIV, (x, y) -> x / y);
                 put(BinaryOperation.MOD, (x, y) -> x % y);
-                put(BinaryOperation.AND, (x, y) -> x != 0 && y != 0 ? 1 : 0);
-                put(BinaryOperation.OR, (x, y) -> x != 0 || y != 0 ? 1 : 0);
+                put(BinaryOperation.AND, (x, y) -> x & y);
+                put(BinaryOperation.OR, (x, y) -> x | y);
                 put(BinaryOperation.GT, (x, y) -> x > y ? 1 : 0);
                 put(BinaryOperation.GE, (x, y) -> x >= y ? 1 : 0);
                 put(BinaryOperation.LT, (x, y) -> x < y ? 1 : 0);
@@ -79,7 +79,7 @@ public class AssignBinaryOperation extends IntermediateCode implements IntroSpac
                     } else {
                         return new AssignBinaryOperation(temporary, left, BinaryOperation.MUL, op2, op1).simplify();
                     }
-                    break;
+                    return new AssignBinaryOperation(temporary, left, operation, op2, op1);
                 case DIV: // TODO: Div Optimization
                     if (op1 instanceof ImmValue && ((ImmValue) op1).value == 0) {
                         return new Move(temporary, left, new ImmValue(0));
