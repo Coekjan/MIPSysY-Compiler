@@ -67,6 +67,7 @@ public class BasicBlockOptimizer implements Optimizer.BlockOptimizer {
         return Pair.of(flowGraph, Pair.of(head == tail ? head : head.getNext(), tail));
     }
 
+    private boolean diffSim = false;
     private final Map<BasicBlock, Set<IntermediateCode>> reachInOfBlock = new HashMap<>();
     private final Map<BasicBlock, Set<IntermediateCode>> reachOutOfBlock = new HashMap<>();
 
@@ -269,10 +270,12 @@ public class BasicBlockOptimizer implements Optimizer.BlockOptimizer {
                             final Value value = reach.get(0).right().get(0);
                             if (value instanceof ImmValue) { // const
                                 aft.set(i, value);
+                                diffSim = true;
                             } else if (!use.get(0).symbol.endsWith("%1") && !value.symbol.equals(Return.RET_SYM)) {
                                 final IntermediateCode curCode = (IntermediateCode) reach.get(0);
                                 if (!pathFind(flowGraph, flowGraph.getBlock(curCode), curCode, code, value)) { // copy value
                                     aft.set(i, value);
+                                    diffSim = true;
                                 }
                             }
                         }
@@ -311,6 +314,14 @@ public class BasicBlockOptimizer implements Optimizer.BlockOptimizer {
                         final IntermediateCode nop = new Nop();
                         code.replaceWith(nop);
                         lt.reassignCode(code, nop);
+                        diffSim = true;
+                        if (code == p.getHead()) {
+                            p.setHead(nop);
+                        }
+                        if (code == p.getTail()) {
+                            p.setTail(nop);
+                            break;
+                        }
                         // System.out.println(">>> REMOVE : " + code);
                     }
                 }
@@ -325,6 +336,10 @@ public class BasicBlockOptimizer implements Optimizer.BlockOptimizer {
     protected void prepare(FlowGraph flowGraph, Pair<BasicBlock, BasicBlock> basicBlock) {
         activeDefUse(basicBlock, true);
         reachInOut(flowGraph, basicBlock);
+    }
+
+    public boolean diff() {
+        return diffSim;
     }
 
     @Override

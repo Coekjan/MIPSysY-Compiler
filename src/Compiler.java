@@ -207,8 +207,11 @@ public class Compiler {
                 }
                 assert end != null;
                 Pair<IntermediateCode, IntermediateCode> opt = Pair.of(start, end);
-                for (int i = 0; i < constTimes; ++i) {
-                    opt = new Optimizer.RemoveRedundantLabel().apply(lt, new BasicBlockOptimizer().apply(lt, opt));
+                while (true) {
+                    final BasicBlockOptimizer optimizer = new BasicBlockOptimizer();
+                    opt = optimizer.apply(lt, opt);
+                    opt = new Optimizer.RemoveRedundantLabel().apply(lt, opt);
+                    if (!optimizer.diff()) break;
                 }
                 final RegAllocator allocator = new RegAllocator();
                 allocator.apply(lt, opt);
