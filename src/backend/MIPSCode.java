@@ -170,6 +170,19 @@ public abstract class MIPSCode extends LinkedNode<MIPSCode> {
         }
     }
 
+    public static class MoveFromLO extends MIPSCode {
+        public final Reg target;
+
+        public MoveFromLO(Reg target) {
+            this.target = target;
+        }
+
+        @Override
+        String stringify() {
+            return "mflo " + target;
+        }
+    }
+
     public static class LoadCode extends MIPSCode {
         public final Reg target;
         public final Address address;

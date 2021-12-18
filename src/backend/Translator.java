@@ -405,15 +405,37 @@ public class Translator {
                 final BigInteger m_ = m.subtract(BigInteger.valueOf(2).pow(32));
                 final int dSign = d < 0 ? -1 : 0;
                 final int shPost = l - 1;
+                p = p.link(new MIPSCode.BinaryRegRegCode(MIPSCode.BinaryRegRegCode.Op.ADDU, Reg.RET_VAL, (Reg) op1, Reg._0));
                 p = p.link(new MIPSCode.LoadImmCode(Reg.CT, new Imm(m_.intValue())));
                 p = p.link(new MIPSCode.Mult(Reg.CT, (Reg) op1));
                 p = p.link(new MIPSCode.MoveFromHI(Reg.CT));
-                p = p.link(new MIPSCode.BinaryRegRegCode(MIPSCode.BinaryRegRegCode.Op.ADDU, (Reg) left, Reg.CT, (Reg) op1));
+                p = p.link(new MIPSCode.BinaryRegRegCode(MIPSCode.BinaryRegRegCode.Op.ADDU, (Reg) left, Reg.CT, Reg.RET_VAL));
                 p = p.link(new MIPSCode.BinaryRegImmCode(MIPSCode.BinaryRegImmCode.Op.SRA, (Reg) left, (Reg) left, new Imm(shPost)));
-                p = p.link(new MIPSCode.BinaryRegRegCode(MIPSCode.BinaryRegRegCode.Op.SLT, Reg.CT, (Reg) op1, Reg._0));
+                p = p.link(new MIPSCode.BinaryRegRegCode(MIPSCode.BinaryRegRegCode.Op.SLT, Reg.CT, Reg.RET_VAL, Reg._0));
                 p = p.link(new MIPSCode.BinaryRegRegCode(MIPSCode.BinaryRegRegCode.Op.ADDU, (Reg) left, (Reg) left, Reg.CT));
                 p = p.link(new MIPSCode.BinaryRegImmCode(MIPSCode.BinaryRegImmCode.Op.XORI, (Reg) left, (Reg) left, new Imm(dSign)));
                 p = p.link(new MIPSCode.BinaryRegImmCode(MIPSCode.BinaryRegImmCode.Op.SUBIU, (Reg) left, (Reg) left, new Imm(dSign)));
+            } else if (code.operation == AssignBinaryOperation.BinaryOperation.MOD && d != 0) {
+                final int l = Math.max(((int) Math.ceil(Math.log(Math.abs(d)) / Math.log(2))), 1);
+                final BigInteger m = BigInteger.ONE.add(BigInteger.valueOf(2).pow(31 + l)
+                        .divide(BigInteger.valueOf(Math.abs(d))));
+                final BigInteger m_ = m.subtract(BigInteger.valueOf(2).pow(32));
+                final int dSign = d < 0 ? -1 : 0;
+                final int shPost = l - 1;
+                p = p.link(new MIPSCode.BinaryRegRegCode(MIPSCode.BinaryRegRegCode.Op.ADDU, Reg.RET_VAL, (Reg) op1, Reg._0));
+                p = p.link(new MIPSCode.LoadImmCode(Reg.CT, new Imm(m_.intValue())));
+                p = p.link(new MIPSCode.Mult(Reg.CT, (Reg) op1));
+                p = p.link(new MIPSCode.MoveFromHI(Reg.CT));
+                p = p.link(new MIPSCode.BinaryRegRegCode(MIPSCode.BinaryRegRegCode.Op.ADDU, (Reg) left, Reg.CT, Reg.RET_VAL));
+                p = p.link(new MIPSCode.BinaryRegImmCode(MIPSCode.BinaryRegImmCode.Op.SRA, (Reg) left, (Reg) left, new Imm(shPost)));
+                p = p.link(new MIPSCode.BinaryRegRegCode(MIPSCode.BinaryRegRegCode.Op.SLT, Reg.CT, Reg.RET_VAL, Reg._0));
+                p = p.link(new MIPSCode.BinaryRegRegCode(MIPSCode.BinaryRegRegCode.Op.ADDU, (Reg) left, (Reg) left, Reg.CT));
+                p = p.link(new MIPSCode.BinaryRegImmCode(MIPSCode.BinaryRegImmCode.Op.XORI, (Reg) left, (Reg) left, new Imm(dSign)));
+                p = p.link(new MIPSCode.BinaryRegImmCode(MIPSCode.BinaryRegImmCode.Op.SUBIU, (Reg) left, (Reg) left, new Imm(dSign)));
+                p = p.link(new MIPSCode.LoadImmCode(Reg.CT, new Imm(d)));
+                p = p.link(new MIPSCode.Mult(Reg.CT, (Reg) left));
+                p = p.link(new MIPSCode.MoveFromLO(Reg.CT));
+                p = p.link(new MIPSCode.BinaryRegRegCode(MIPSCode.BinaryRegRegCode.Op.SUBU, (Reg) left, Reg.RET_VAL, Reg.CT));
             } else {
                 p = p.link(new MIPSCode.BinaryRegImmCode(MIPSCode.BinaryRegImmCode.Op.fromBinary(code.operation),
                         (Reg) left, (Reg) op1, (Imm) op2));
