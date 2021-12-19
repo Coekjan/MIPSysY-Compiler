@@ -73,10 +73,16 @@ public class LoopScheduler implements RegScheduler {
 
     @Override
     public void switchContext(String context) {
+        clear();
     }
 
     @Override
     public boolean active(IntermediateCode code, Value value) {
         return true;
+    }
+
+    @Override
+    public boolean isGlobalReg(Reg reg) {
+        return false;
     }
 }

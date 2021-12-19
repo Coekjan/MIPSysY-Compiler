@@ -115,7 +115,7 @@ public class Translator {
                             for (Reg r : cur.keySet()) {
                                 final Value v = cur.get(r);
                                 if (v instanceof WordValue) {
-                                    if (t.scheduler.active(c, v) && !r.isSaved() || v.isGlobal() || r.isSaved()) {
+                                    if (t.scheduler.active(c, v) && !t.scheduler.isGlobalReg(r) || v.isGlobal() || t.scheduler.isGlobalReg(r)) {
                                         p = p.link(new MIPSCode.StoreCode(r, t.addressMap.get(v)));
                                     }
                                 } else if (v instanceof AddrValue && v.isTemp()) {
@@ -592,10 +592,12 @@ public class Translator {
                     if (address instanceof RelativeAddress || key instanceof WordValue) {
                         if (!(key instanceof AddrValue) &&
                                 (interP.getPrev() == null || scheduler.active(interP.getPrev(), key)) &&
-                                !reg.isSaved() || key.isGlobal()) {
+                                !scheduler.isGlobalReg(reg) || key.isGlobal()) {
                             q = q.link(new MIPSCode.StoreCode(reg, address));
                         }
-                        if (!reg.isSaved() || key.isGlobal()) removeList.add(reg);
+                        if (!scheduler.isGlobalReg(reg) || key.isGlobal()) removeList.add(reg);
+                    } else if (address instanceof AbsoluteAddress) {
+                        removeList.add(reg);
                     }
                 }
                 removeList.forEach(scheduler::remove);
@@ -619,10 +621,12 @@ public class Translator {
                     final Value key = scheduler.current().get(reg);
                     final Address address = addressMap.get(key);
                     if (address instanceof RelativeAddress || key instanceof WordValue) {
-                        if (!(key instanceof AddrValue) && scheduler.active(interP, key) && !reg.isSaved() || key.isGlobal()) {
+                        if (!(key instanceof AddrValue) && scheduler.active(interP, key) && !scheduler.isGlobalReg(reg) || key.isGlobal()) {
                             q = q.link(new MIPSCode.StoreCode(reg, address));
                         }
-                        if (!reg.isSaved() || key.isGlobal()) removeList.add(reg);
+                        if (!scheduler.isGlobalReg(reg) || key.isGlobal()) removeList.add(reg);
+                    } else if (address instanceof AbsoluteAddress) {
+                        removeList.add(reg);
                     }
                 }
                 removeList.forEach(scheduler::remove);

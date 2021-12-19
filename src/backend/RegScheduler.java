@@ -34,4 +34,6 @@ public interface RegScheduler {
     void switchContext(String context);
 
     boolean active(IntermediateCode code, Value value);
+
+    boolean isGlobalReg(Reg reg);
 }

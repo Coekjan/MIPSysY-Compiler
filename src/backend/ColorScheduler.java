@@ -113,4 +113,9 @@ public class ColorScheduler implements RegScheduler {
     public boolean active(IntermediateCode code, Value value) {
         return allocators.get(currentContext).active(code, value);
     }
+
+    @Override
+    public boolean isGlobalReg(Reg reg) {
+        return reg.isSaved();
+    }
 }
