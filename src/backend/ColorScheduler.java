@@ -21,12 +21,22 @@ public class ColorScheduler implements RegScheduler {
     }
 
     @Override
-    public Pair<Value, Reg> overflow(Collection<Reg> holdRegs) {
+    public Pair<Value, Reg> overflow(IntermediateCode code, Collection<Reg> holdRegs) {
         Reg res = inUse.get(0);
+        boolean find = false;
         for (Reg reg : inUse) {
-            if (!holdRegs.contains(reg)) {
+            if (!active(code, cur.get(reg))) {
+                find = true;
                 res = reg;
                 break;
+            }
+        }
+        if (!find) {
+            for (Reg reg : inUse) {
+                if (!holdRegs.contains(reg)) {
+                    res = reg;
+                    break;
+                }
             }
         }
         final Value value = cur.get(res);

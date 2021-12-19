@@ -507,7 +507,7 @@ public class Translator {
         if (find.isPresent()) return Pair.of(p, find.get());
         Optional<Reg> op = t.scheduler.allocReg(varName, h);
         while (!op.isPresent()) {
-            final Pair<Value, Reg> store = t.scheduler.overflow(h);
+            final Pair<Value, Reg> store = t.scheduler.overflow(t.currentPointer, h);
             if (store.first instanceof WordValue || Character.isDigit(store.first.symbol.charAt(0))) {
                 if (t.scheduler.active(t.currentPointer, store.first)) {
                     p = p.link(new MIPSCode.StoreCode(store.second, t.addressMap.get(store.first)));

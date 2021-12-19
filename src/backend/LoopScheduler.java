@@ -12,7 +12,7 @@ public class LoopScheduler implements RegScheduler {
     private final List<Reg> free = new LinkedList<>(regs);
 
     @Override
-    public Pair<Value, Reg> overflow(Collection<Reg> holdRegs) {
+    public Pair<Value, Reg> overflow(IntermediateCode code, Collection<Reg> holdRegs) {
         assert !inUse.isEmpty();
         final Reg reg = getReg(inUse, holdRegs);
         final Value v = cur.remove(reg);
