@@ -86,7 +86,7 @@ public interface Optimizer {
             IntermediateCode p = block.first;
             while (true) {
                 if (p instanceof ProbablyConst) {
-                    tail.link(((ProbablyConst) p).simplify());
+                    tail.link(((ProbablyConst) p).simplify(lt));
                 } else {
                     tail.link(p);
                 }

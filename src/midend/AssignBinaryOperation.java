@@ -47,7 +47,7 @@ public class AssignBinaryOperation extends IntermediateCode implements IntroSpac
     }
 
     @Override
-    public IntermediateCode simplify() {
+    public IntermediateCode simplify(LabelTable lt) {
         if (op1 instanceof ImmValue && op2 instanceof ImmValue) {
             return new Move(temporary, left,
                     new ImmValue(OPERATIONS.get(operation).calc(((ImmValue) op1).value, ((ImmValue) op2).value)));
@@ -85,7 +85,7 @@ public class AssignBinaryOperation extends IntermediateCode implements IntroSpac
                             return new AssignBinaryOperation(temporary, left, BinaryOperation.SLL, op2, new ImmValue(bit));
                         }
                     } else {
-                        return new AssignBinaryOperation(temporary, left, BinaryOperation.MUL, op2, op1).simplify();
+                        return new AssignBinaryOperation(temporary, left, BinaryOperation.MUL, op2, op1).simplify(lt);
                     }
                     return new AssignBinaryOperation(temporary, left, operation, op2, op1);
                 case DIV:
@@ -115,7 +115,7 @@ public class AssignBinaryOperation extends IntermediateCode implements IntroSpac
                             return new Move(temporary, left, op2);
                         }
                     } else {
-                        return new AssignBinaryOperation(temporary, left, BinaryOperation.AND, op2, op1).simplify();
+                        return new AssignBinaryOperation(temporary, left, BinaryOperation.AND, op2, op1).simplify(lt);
                     }
                 case OR:
                     if (op1 instanceof ImmValue) {
@@ -125,7 +125,7 @@ public class AssignBinaryOperation extends IntermediateCode implements IntroSpac
                             return new Move(temporary, left, new ImmValue(1));
                         }
                     } else {
-                        return new AssignBinaryOperation(temporary, left, BinaryOperation.OR, op2, op1).simplify();
+                        return new AssignBinaryOperation(temporary, left, BinaryOperation.OR, op2, op1).simplify(lt);
                     }
                 default:
                     break;

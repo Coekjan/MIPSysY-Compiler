@@ -33,7 +33,7 @@ public class AssignUnaryOperation extends IntermediateCode implements IntroSpace
     }
 
     @Override
-    public IntermediateCode simplify() {
+    public IntermediateCode simplify(LabelTable lt) {
         if (op instanceof ImmValue) {
             return new Move(temporary, left, new ImmValue(OPERATIONS.get(operation).calc(((ImmValue) op).value)));
         } else if (operation == UnaryOperation.POS) {

@@ -296,21 +296,43 @@ public class BasicBlockOptimizer implements Optimizer.BlockOptimizer {
         }
     }
 
-    private void deleteUnusedCode(LabelTable lt, Pair<BasicBlock, BasicBlock> basicBlock) {
+    private void deleteUnusedCode(LabelTable lt, FlowGraph flowGraph, Pair<BasicBlock, BasicBlock> basicBlock) {
         BasicBlock p = basicBlock.first;
         while (p != null) {
-            IntermediateCode code = p.getHead();
-            while (true) {
-                if (code instanceof Definite) {
-                    final Value defValue = ((Definite) code).getDef();
-                    boolean find = false;
-                    for (Set<Value> vs : activeUse.values()) {
-                        if (vs.contains(defValue)) {
-                            find = true;
-                            break;
+            if (p == basicBlock.first || p == basicBlock.second || !flowGraph.prevOf(p).isEmpty()) {
+                IntermediateCode code = p.getHead();
+                while (true) {
+                    if (code instanceof Definite) {
+                        final Value defValue = ((Definite) code).getDef();
+                        boolean find = false;
+                        for (Set<Value> vs : activeUse.values()) {
+                            if (vs.contains(defValue)) {
+                                find = true;
+                                break;
+                            }
+                        }
+                        if (!defValue.symbol.endsWith("%1") /* global */ && !find) {
+                            final IntermediateCode nop = new Nop();
+                            code.replaceWith(nop);
+                            lt.reassignCode(code, nop);
+                            diffSim = true;
+                            if (code == p.getHead()) {
+                                p.setHead(nop);
+                            }
+                            if (code == p.getTail()) {
+                                p.setTail(nop);
+                                break;
+                            }
+                            // System.out.println(">>> REMOVE : " + code);
                         }
                     }
-                    if (!defValue.symbol.endsWith("%1") /* global */ && !find) {
+                    if (code == p.getTail()) break;
+                    code = code.getNext();
+                }
+            } else {
+                IntermediateCode code = p.getHead();
+                while (true) {
+                    if (!(code instanceof Nop)) {
                         final IntermediateCode nop = new Nop();
                         code.replaceWith(nop);
                         lt.reassignCode(code, nop);
@@ -322,11 +344,10 @@ public class BasicBlockOptimizer implements Optimizer.BlockOptimizer {
                             p.setTail(nop);
                             break;
                         }
-                        // System.out.println(">>> REMOVE : " + code);
                     }
+                    if (code == p.getTail()) break;
+                    code = code.getNext();
                 }
-                if (code == p.getTail()) break;
-                code = code.getNext();
             }
             if (p == basicBlock.second) break;
             p = p.getNext();
@@ -346,7 +367,7 @@ public class BasicBlockOptimizer implements Optimizer.BlockOptimizer {
     public Pair<BasicBlock, BasicBlock> optimize(LabelTable lt, FlowGraph flowGraph, Pair<BasicBlock, BasicBlock> basicBlock) {
         prepare(flowGraph, basicBlock);
         propagateValue(flowGraph, lt, basicBlock);
-        deleteUnusedCode(lt, basicBlock);
+        deleteUnusedCode(lt, flowGraph, basicBlock);
         final Pair<IntermediateCode, IntermediateCode> s =
                 new Optimizer.SimplifyConst().apply(lt, Pair.of(basicBlock.first.getHead(), basicBlock.second.getTail()));
         basicBlock.first.setHead(s.first);

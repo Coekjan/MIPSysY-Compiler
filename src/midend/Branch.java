@@ -78,28 +78,44 @@ public class Branch extends IntermediateCode implements ProbablyConst, ProbablyC
         return new Branch(option, uses.get(0), uses.get(1), label);
     }
 
+    private boolean isBranchToNext(LabelTable lt) {
+        final IntermediateCode target = lt.find(label);
+        IntermediateCode p = target.getPrev();
+        while (p != null) {
+            if (!(p instanceof Nop)) {
+                break;
+            }
+            p = p.getPrev();
+        }
+        return p == this;
+    }
+
     @Override
-    public IntermediateCode simplify() {
-        if (value1 instanceof ImmValue && value2 instanceof ImmValue) {
-            if (OPTIONS.get(option).test(((ImmValue) value1).value, ((ImmValue) value2).value)) {
-                return new Jump(label);
-            } else {
-                return new Nop();
+    public IntermediateCode simplify(LabelTable lt) {
+        if (!isBranchToNext(lt)) {
+            if (value1 instanceof ImmValue && value2 instanceof ImmValue) {
+                if (OPTIONS.get(option).test(((ImmValue) value1).value, ((ImmValue) value2).value)) {
+                    return new Jump(label);
+                } else {
+                    return new Nop();
+                }
+            } else if (value1 instanceof ImmValue) {
+                switch (option) {
+                    case EQ:
+                    case NE:
+                        return new Branch(option, value2, value1, label);
+                    case GE:
+                        return new Branch(BranchOption.LE, value2, value1, label);
+                    case GT:
+                        return new Branch(BranchOption.LT, value2, value1, label);
+                    case LE:
+                        return new Branch(BranchOption.GE, value2, value1, label);
+                    case LT:
+                        return new Branch(BranchOption.GT, value2, value1, label);
+                }
             }
-        } else if (value1 instanceof ImmValue) {
-            switch (option) {
-                case EQ:
-                case NE:
-                    return new Branch(option, value2, value1, label);
-                case GE:
-                    return new Branch(BranchOption.LE, value2, value1, label);
-                case GT:
-                    return new Branch(BranchOption.LT, value2, value1, label);
-                case LE:
-                    return new Branch(BranchOption.GE, value2, value1, label);
-                case LT:
-                    return new Branch(BranchOption.GT, value2, value1, label);
-            }
+        } else {
+            return new Nop();
         }
         return new Branch(option, value1, value2, label);
     }
