@@ -590,9 +590,8 @@ public class Translator {
                     final Value key = scheduler.current().get(reg);
                     final Address address = addressMap.get(key);
                     if (address instanceof RelativeAddress || key instanceof WordValue) {
-                        if (!(key instanceof AddrValue) &&
-                                (interP.getPrev() == null || scheduler.active(interP.getPrev(), key)) &&
-                                !scheduler.isGlobalReg(reg) || key.isGlobal()) {
+                        if (!(key instanceof AddrValue) && !scheduler.isGlobalReg(reg) &&
+                                (interP.getPrev() == null || scheduler.active(interP.getPrev(), key)) || key.isGlobal()) {
                             q = q.link(new MIPSCode.StoreCode(reg, address));
                         }
                         if (!scheduler.isGlobalReg(reg) || key.isGlobal()) removeList.add(reg);
