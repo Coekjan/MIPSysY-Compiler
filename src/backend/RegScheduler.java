@@ -19,21 +19,58 @@ public interface RegScheduler {
     /**
      * @param name var-name
      * @param holdRegs reg-ignored
-     * @return <code>Optional.empty()</code> iff full, <code>Optional.of(reg-name)</code> iff not full
+     * @return <code>Optional.empty()</code> iff full,
+     * <code>Optional.of(reg-name)</code> iff not full
      */
     Optional<Reg> allocReg(Value name, Collection<Reg> holdRegs);
 
+    /**
+     * remove the usage of the specified register
+     * @param reg the specified register
+     */
     void remove(Reg reg);
 
+    /**
+     * clear all registers in use
+     */
     void clear();
 
+    /**
+     * find the register already mapped to <code>name</code>
+     * @param name variable name
+     * @return if found, return <code>Optional.of(reg)</code>; else,
+     * return <code>Optional.empty()</code>
+     */
     Optional<Reg> find(Value name);
 
+    /**
+     * get current mapping between registers and variables
+     * @return map between registers and variables
+     */
     Map<Reg, Value> current();
 
+    /**
+     * switch context to the specified context
+     * @param context the specified context
+     */
     void switchContext(String context);
 
+    /**
+     * tell whether the variable <code>value</code> is active(liveness
+     * analysis) at <code>code</code>
+     * @param code the specified intermediate code
+     * @param value the variable name
+     * @return if the variable <code>value</code> is active(liveness
+     * analysis) at <code>code</code>, return <code>true</code>;
+     * else, return <code>false</code>
+     */
     boolean active(IntermediateCode code, Value value);
 
+    /**
+     * tell whether the register is used as global register
+     * @param reg the specified registers
+     * @return if the register is used as global register, return
+     * <code>true</code>; else, return <code>false</code>
+     */
     boolean isGlobalReg(Reg reg);
 }
